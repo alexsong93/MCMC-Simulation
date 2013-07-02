@@ -22,7 +22,7 @@ function varargout = MCMC_pre(varargin)
 
 % Edit the above text to modify the response to help MCMC_pre
 
-% Last Modified by GUIDE v2.5 17-Jun-2013 16:43:24
+% Last Modified by GUIDE v2.5 27-Jun-2013 16:42:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -59,7 +59,10 @@ handles.output = hObject;
 guidata(hObject, handles);
 
 % UIWAIT makes MCMC_pre wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
+% uiwait(handles.MCMC_pre);
+
+setappdata(0, 'hMainGui', gcf);
+setappdata(gcf, 'fhUpdateData', @updateData);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -79,6 +82,20 @@ function browse_push_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+hMainGui = getappdata(0, 'hMainGui');
+filename = uigetfile('*.csv');
+set(handles.browse_text,'String',filename);
+setappdata(hMainGui, 'filename', filename);
+filename = getappdata(hMainGui, 'filename');
+%updateData;
+
+% function updateData
+% hMainGui = getappdata(0, 'hMainGui');
+% filename = getappdata(hMainGui, 'filename')
+% order_value = getappdata(hMainGui, 'order')
+% width_value = getappdata(hMainGui, 'width')
+% length_value = getappdata(hMainGui, 'length')
+
 
 % --- Executes on selection change in order_popup.
 function order_popup_Callback(hObject, eventdata, handles)
@@ -88,6 +105,13 @@ function order_popup_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns order_popup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from order_popup
+
+hMainGui = getappdata(0, 'hMainGui');
+order_value = cellstr(get(hObject,'String'));
+order_value = order_value{get(hObject,'Value')};
+setappdata(hMainGui, 'order', order_value);
+order_value = getappdata(hMainGui, 'order');
+%updateData;
 
 
 % --- Executes during object creation, after setting all properties.
@@ -104,18 +128,23 @@ end
 
 
 
-function width_text_Callback(hObject, eventdata, handles)
-% hObject    handle to width_text (see GCBO)
+function num_text_Callback(hObject, eventdata, handles)
+% hObject    handle to num_text (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of width_text as text
-%        str2double(get(hObject,'String')) returns contents of width_text as a double
+% Hints: get(hObject,'String') returns contents of num_text as text
+%        str2double(get(hObject,'String')) returns contents of num_text as a double
 
+hMainGui = getappdata(0, 'hMainGui');
+num_value = get(hObject,'String');
+setappdata(hMainGui, 'num', num_value);
+num_value = getappdata(hMainGui, 'num');
+%updateData;
 
 % --- Executes during object creation, after setting all properties.
-function width_text_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to width_text (see GCBO)
+function num_text_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to num_text (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -135,6 +164,11 @@ function length_text_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of length_text as text
 %        str2double(get(hObject,'String')) returns contents of length_text as a double
 
+hMainGui = getappdata(0, 'hMainGui');
+length_value = get(hObject,'String');
+setappdata(hMainGui, 'length', length_value);
+length_value = getappdata(hMainGui, 'length');
+%updateData;
 
 % --- Executes during object creation, after setting all properties.
 function length_text_CreateFcn(hObject, eventdata, handles)
@@ -158,6 +192,11 @@ function browse_text_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of browse_text as text
 %        str2double(get(hObject,'String')) returns contents of browse_text as a double
 
+hMainGui = getappdata(0, 'hMainGui');
+filename = get(hObject,'String');
+setappdata(hMainGui, 'filename', filename);
+filename = getappdata(hMainGui, 'filename');
+%updateData;
 
 % --- Executes during object creation, after setting all properties.
 function browse_text_CreateFcn(hObject, eventdata, handles)
@@ -166,6 +205,103 @@ function browse_text_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in submit_push.
+function submit_push_Callback(hObject, eventdata, handles)
+% hObject    handle to submit_push (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of submit_push
+
+GUI;
+
+
+% --- Executes on selection change in length_popup.
+function length_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to length_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns length_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from length_popup
+
+hMainGui = getappdata(0, 'hMainGui');
+length_value = cellstr(get(hObject,'String'));
+length_value = length_value{get(hObject,'Value')};
+setappdata(hMainGui, 'length', length_value);
+length_value = getappdata(hMainGui, 'length');
+
+
+% --- Executes during object creation, after setting all properties.
+function length_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to length_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function interval_text_Callback(hObject, eventdata, handles)
+% hObject    handle to interval_text (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of interval_text as text
+%        str2double(get(hObject,'String')) returns contents of interval_text as a double
+
+hMainGui = getappdata(0, 'hMainGui');
+interval_value = get(hObject,'String');
+setappdata(hMainGui, 'interval', interval_value);
+interval_value = getappdata(hMainGui, 'interval');
+
+
+% --- Executes during object creation, after setting all properties.
+function interval_text_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to interval_text (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in unit_popup.
+function unit_popup_Callback(hObject, eventdata, handles)
+% hObject    handle to unit_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns unit_popup contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from unit_popup
+
+hMainGui = getappdata(0, 'hMainGui');
+unit_value = cellstr(get(hObject,'String'));
+unit_value = unit_value{get(hObject,'Value')};
+setappdata(hMainGui, 'unit', unit_value);
+unit_value = getappdata(hMainGui, 'unit');
+
+
+% --- Executes during object creation, after setting all properties.
+function unit_popup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to unit_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
