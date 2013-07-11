@@ -45,7 +45,7 @@ end
 
 
 % --- Executes just before GUI is made visible.
-function GUI_OpeningFcn(hObject, eventdata, handles, varargin)
+function GUI_OpeningFcn(hObject, eventdata, handles, varargin) %#ok<*INUSL>
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -73,8 +73,22 @@ unit_value = getappdata(hMainGui, 'unit');
 length_value = getappdata(hMainGui, 'length');
 length_value = str2double(length_value);
 
-[BIC,data_orig,data_simul,states] = MCMC_Simul(filename,order_value,...
+orig_length_value = getappdata(hMainGui, 'orig_length');
+orig_length_value = str2double(orig_length_value);
+leap_yes = getappdata(hMainGui, 'leap_yes');
+leap_yes = str2double(leap_yes);
+leap_no = getappdata(hMainGui, 'leap_no');
+leap_no = str2double(leap_no);
+leap_popup = getappdata(hMainGui, 'leap_popup');
+no_sample = getappdata(hMainGui, 'no_sample');
+no_sample = str2double(no_sample);
+
+
+[BIC,data_orig,data_simul,states,cap_factors] = MCMC_Simul(filename,order_value,...
     numstates_value,interval_value,unit_value,length_value);   
+
+% capacity table
+set(handles.cap_table,'data',cap_factors);
 
 set(handles.BIC_text,'String',BIC);
 set(handles.data_text,'String',filename);
@@ -110,21 +124,23 @@ pdf_orig=pdf_orig(1:end-1)./numel(data_orig);
 pdf_simul=histc(data_simul,states);
 pdf_simul=pdf_simul(1:end-1)./numel(data_simul);
 pdf = bar(handles.orig_pdf,[pdf_orig,pdf_simul],'barwidth',1);
-% str = strcat('set(handles.orig_pdf,''XTickLabel'',{''',num2str(states(1)),'~',num2str(states(2)),'''');
-% for i = 2:numel(states)-1
-%     str = strcat(str,',''',num2str(states(i)),'~',num2str(states(i+1)),'''');
-% end
-% 
-% str = strcat(str,'});');
-
-str = strcat('set(handles.orig_pdf,''XTickLabel'',{''',num2str(states(1)),'''');
-for i = 2:numel(states)
-    str = strcat(str,',''',num2str(states(i)),'''');
+str = strcat('set(handles.orig_pdf,''XTickLabel'',{''',num2str(floor(states(1))),...
+                '~',num2str(floor(states(2))),'''');
+for i = 2:numel(states)-1
+    str = strcat(str,',''',num2str(floor(states(i))),'~',num2str(floor(states(i+1))),'''');
 end
-
 str = strcat(str,'});');
-
 eval(str);
+axes(handles.orig_pdf);
+xticklabel_rotate([],45,[],'Fontsize',9);
+
+% str = strcat('set(handles.orig_pdf,''XTickLabel'',{''',num2str(floor(states(1))),'''');
+% for i = 2:numel(states)
+%     str = strcat(str,',''',num2str(floor(states(i))),'''');
+% end
+% str = strcat(str,'});');
+% eval(str);
+
 colormap(summer);
 l = cell(1,2);
 l{1}='original';l{2}='simulated';
@@ -148,6 +164,9 @@ ylabel(handles.sim_data,'Wind Power in MW');
 xlabel(handles.sim_data,'Time in hrs');
 
 
+
+
+
 % --- Outputs from this function are returned to the command line.
 function varargout = GUI_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
@@ -158,9 +177,15 @@ function varargout = GUI_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
+%set height of each row of table
+table = handles.cap_table;
+jUIScrollPane = findjobj(table);
+jTable = jUIScrollPane.getViewport.getView;
+jTable.setRowHeight(55);
 
 
-function tabs_Callback(hObject, eventdata, handles)
+
+function tabs_Callback(hObject, eventdata, handles) %#ok<*INUSD,*DEFNU>
 % hObject    handle to tabs (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -201,7 +226,7 @@ function back_push_Callback(hObject, eventdata, handles)
 % hObject    handle to back_push (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-MCMC_pre;
+Pre_MCMC;
 close(handles.GUI);
 
 

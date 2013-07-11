@@ -1,4 +1,4 @@
-function [BIC,data_orig,data_simul,states] = MCMC_Simul(data,order,num,intv,unit,len)
+function [BIC,data_orig,data_simul,states,cap_factors] = MCMC_Simul(data,order,num,intv,unit,len)
 
 %[BIC,data_orig,data_simul,states] = MCMC_Simul(data,order,num,len)     
 %   This function takes in some time-series data and generates a simulation
@@ -20,26 +20,31 @@ function [BIC,data_orig,data_simul,states] = MCMC_Simul(data,order,num,intv,unit
 %   data_orig   - original data in csv form
 %   data_simul  - simulated data
 %   states      - the range of values for each state
+%   cap_factors - average annual capacity factors for mornings, Afternoons,
+%                 evenings, and Nights                  
 
 % if(nargin~=6)                       % no/incorrect number of arguments
 %     errordlg('Please input 6 arguments.');
 % end
 
+data_orig = csvread(data);         % original data in csv form
 % calculate length of simulated data based on time interval and unit
-if(strcmp(unit,'minute(s)')==1)
-    len = floor((525949*len)/intv);
-elseif(strcmp(unit,'hour(s)')==1)
-    len = floor((8766*len)/intv);
-else
-    len = floor((365*len)/intv);
-end
-
+% if(strcmp(unit,'minute(s)')==1)
+%     %len = floor((525949*len)/intv);
+% elseif(strcmp(unit,'hour(s)')==1)
+%     %len = floor((8766*len)/intv);
+% else
+%     %len = floor((365*len)/intv);
+% end
+len = len*numel(data_orig);
 simul_len = len;
 data_simul=zeros(simul_len,1);
-data_orig = csvread(data);         % original data in csv form
 
+% account for negative values
 min_data = min(data_orig);
-data_orig = data_orig + -1.*min_data;
+if(min_data < 0)
+    data_orig = data_orig + -1.*min_data;
+end
 
 max_data=max(data_orig);
 numstates = num;
@@ -84,6 +89,8 @@ else
     for iter1 = 1:numel(data_orig)     %make values into states
         if(data_orig(iter1)==0)
             state = 1;
+        elseif(data_orig(iter1)==max_data)
+            state = numstates;
         else
             state = ceil(data_orig(iter1)/width_state);
         end
@@ -168,13 +175,18 @@ if(order == 1)
     % Simulation simul_len times
     for iter=2:simul_len
         u_rand = rand(1,1);
-        next_state = sum(C(start_row,:)<u_rand)+1;
-        %next_state = pickNextState(n,start,C);
+        next_state = 1;
+        for j=1:n-1
+            if(C(start,j) < u_rand && u_rand <= C(start,j+1))
+                next_state = j+1;
+            end
+        end
         chosen_value=states(next_state) + (states(next_state+1)-...
                      states(next_state)).*rand(1,1);
         data_simul(iter)=chosen_value;
         start=next_state;
     end
+    
 % for higher order
 else                                    
     start=randi([1,row_len-1],1);       % randomly choose wind state at hr 0
@@ -191,13 +203,11 @@ else
     
     % Simulation simul_len times
     for iter=2:simul_len
-        %next_state = pickNextState(row_len,start_row,C);
         u_rand = rand(1,1);
         next_state = sum(C(start_row,:)<u_rand)+1;
         chosen_value=states(next_state) + (states(next_state+1)-...
                      states(next_state)).*rand(1,1);
         data_simul(iter)=chosen_value;
-        
         toAdd = 0;
         for i = order-1:-1:1
             toAdd = toAdd + (numstates.^i).*(next_state-1);
@@ -205,26 +215,6 @@ else
         end
         toAdd = toAdd + sscanf(mat{start_row,2},'%f');
         start_row = toAdd;
-        %toAdd = (numstates.^(order-1)).*(next_state-1);
-
-%         if(numstates < 10)
-%             last = (xy{start_row}(4)-48);
-%             start_row = toAdd + last;
-%         else
-%             if(xy{start_row}(5)+0 == 32)
-%                 last = (xy{start_row}(6)-48);
-%                 start_row = toAdd +last;
-%             else
-%                 last = str2double(xy{start_row}(5))*10 +(xy{start_row}(6)-48);
-%                 start_row = toAdd + last;
-%             end
-%         end
-
-%         out = isValid(start_row,C); %check if start_row is not all zeros
-%         while(out==0)
-%             start_row = randi([1,col_len-1],1);
-%             out = isValid(start_row,C);
-%         end
     end
 end
    
@@ -245,91 +235,49 @@ end
 phi = (numstates.^order).*(numstates-1);           % no. of independent parameters 
 BIC = -2.*LL + phi.*log(numel(data_orig));
 
-
-data_orig = data_orig - -1.*min_data;
-data_simul = data_simul - -1.*min_data;
-states = states - -1.*min_data;
-
-
-% % Plotting the results - uncomment when testing/not using the GUI
-% %plotting 'training' and simulated time series
-% figure;clf;
-% plot(data_orig,'g');
-% title('Actual wind data');
-% ylabel('Wind Power in MW');
-% xlabel('Time in hrs');
-% 
-% figure;clf;
-% plot(data_simul,'r');
-% title('Simulated wind data');
-% ylabel('Wind Power in MW');
-% xlabel('Time in hrs');
-% 
-% %plotting acf
-% figure(1);clf;
-% hold on;
-% [ACF_orig,~]=autocorr(data_orig,6*24*2); %2days
-% [ACF_simul,~]=autocorr(data_simul,6*24*2);
-% plot(1:numel(ACF_orig),ACF_orig)
-% plot(1:numel(ACF_simul),ACF_simul,'-.')
-% title('Comparison of autocorrelation function (acf)');
-% legend('acf of input wind power time series','acf of simulated series');
-% xlabel('time lag');ylabel('autocorrelation');
-% hold off;
-% 
-% 
-% %plotting pdf
-% 
-% pdf_orig=histc(data_orig,states)./numel(data_orig);
-% pdf_simul=histc(data_simul,states)./numel(data_simul);
-% figure(2);clf;
-% pdf = bar(states,[pdf_orig,pdf_simul],'barwidth',1);
-% colormap(summer)
-% grid on
-% l = cell(1,2);
-% l{1}='original';l{2}='simulated';
-% legend(pdf,l);
-% hold on
-% %subplot(2,1,1)
-% parentHandle1 = bar(states,pdf_orig,'barwidth',1);
-% childHandle1 = get(parentHandle1,'Children');
-% set(childHandle1,'FaceAlpha',0.5);
-% %set(gca,'XLim',[-80 lim+30])
-% %subplot(2,1,2)
-% parentHandle2 = bar(states,pdf_simul,'barwidth',1);
-% childHandle2 = get(parentHandle2,'Children');
-% set(childHandle2,'FaceAlpha',0.5);
-% %set(gca,'XLim',[-80 lim+30])
-% title ('pdf of original and simulated time series');
-% xlabel('Wind Power Output (MW)');ylabel('Density');
-% hold off
-
-
+% subtract back for negative numbers
+if(min_data < 0)
+    data_orig = data_orig - -1.*min_data;
+    data_simul = data_simul - -1.*min_data;
+    states = states - -1.*min_data;
 end
 
-% pick the next state based on u_rand
-function next_state = pickNextState(row_len,start_row,C)
-    u_rand=rand(1,1);
-    % finding next state as indicated by u_rand
-%     next_state = 0;
-%     for iter1=2:row_len
-%         if(u_rand<=C(start_row,1))
-%             next_state=1;
-%         elseif(C(start_row,iter1-1)<u_rand && C(start_row,iter1)>=u_rand);
-%              next_state=iter1; 
-%         end
-%     end
-    next_state = 1;
-    for j=1:row_len-1
-        if(C(start_row,j) < u_rand && u_rand <= C(start_row,j+1))
-            next_state = j+1;
-        end
+%% Calculate average annual capacity factor
+cap_factors = [6,12];
+Seasons = cellstr(['Summer     ';'Spring/Fall';'Winter     ']);
+TimeOfDays = cellstr(['Morning  ';'Afternoon';'Evening  ';'Night    ']);
+
+numPeriods = 0;
+if(strcmp(unit,'minute(s)')==1)
+    numPeriods = 60/intv;
+elseif(strcmp(unit,'hour(s)')==1)
+    numPeriods = 1/intv;
+end
+
+index = 1;
+for i = 1:2:6
+    count = 1;
+    for j = 1:3:10
+        [orig_capfactor,sim_capfactor,orig_max,sim_max,orig_min,sim_min] = ...
+        calcCapFactors(Seasons(index),TimeOfDays(count),false,numPeriods,...
+                        max_data,data_orig,data_simul);
+        cap_factors(i,j) = orig_capfactor;
+        cap_factors(i,j+1) = orig_min;
+        cap_factors(i,j+2) = orig_max;
+        cap_factors(i+1,j) = sim_capfactor;
+        cap_factors(i+1,j+1) = sim_min;
+        cap_factors(i+1,j+2) = sim_max;
+        count = count + 1;
     end
+    index = index + 1;
 end
 
+
+end
+
+function out = isValid(start_row,C)
 % check to see if all elements of start_row are zero - means the state
 % transition never happened so choose a different start_row
-function out = isValid(start_row,C)
     if(C(start_row,:)==0)
         out = 0;
     else
@@ -337,3 +285,144 @@ function out = isValid(start_row,C)
     end
 end
 
+function [orig_capfactor,sim_capfactor,orig_max,sim_max,orig_min,sim_min] = ...
+    calcCapFactors(season,timeOfDay,isLeap,numPeriods,max_data,data_orig,data_simul)
+% calculate the annual average capacity factors for different time of the
+% day for different seasons
+
+    orig = data_orig';
+    sim = data_simul';
+    numerator_orig = [];
+    numerator_sim = [];
+    
+    % check season
+    begin = 0; numDays = 0;  numHours = 0;
+    if(strcmp(season,'Summer') == 1)
+        if(isLeap == true)
+            begin = 121;
+        else
+            begin = 120;
+        end
+        numDays = 153;
+        if(strcmp(timeOfDay,'Morning'))
+            numHours = 1071;
+        elseif(strcmp(timeOfDay,'Afternoon'))
+            numHours = 765;
+        elseif(strcmp(timeOfDay,'Evening'))
+            numHours = 612;
+        elseif(strcmp(timeOfDay,'Night'))
+            numHours = 1224;
+        end
+    elseif(strcmp(season,'Spring/Fall') == 1)
+        if(isLeap == true)
+            begin = 91;
+        else
+            begin = 90;
+        end
+        numDays = 61;
+        if(strcmp(timeOfDay,'Morning'))
+            numHours = 427;
+        elseif(strcmp(timeOfDay,'Afternoon'))
+            numHours = 305;
+        elseif(strcmp(timeOfDay,'Evening'))
+            numHours = 244;
+        elseif(strcmp(timeOfDay,'Night'))
+            numHours = 488;
+        end
+    elseif(strcmp(season,'Winter') == 1)
+        if(isLeap == true)
+            begin = 305;
+        else
+            begin = 304;
+        end
+        numDays = 151;
+        if(strcmp(timeOfDay,'Morning'))
+            numHours = 1057;
+        elseif(strcmp(timeOfDay,'Afternoon'))
+            numHours = 755;
+        elseif(strcmp(timeOfDay,'Evening'))
+            numHours = 604;
+        elseif(strcmp(timeOfDay,'Night'))
+            numHours = 1208;
+        end
+    end
+    
+    % check time of day
+    timeBegin = 0; timeEnd = 0; timeToNext = 0;
+    if(strcmp(timeOfDay,'Morning'))
+        timeBegin = 6;
+        timeEnd = 7;
+        timeToNext = 17*numPeriods + 1;
+    elseif(strcmp(timeOfDay,'Afternoon'))
+        timeBegin = 13;
+        timeEnd = 5;
+        timeToNext = 19*numPeriods + 1;
+    elseif(strcmp(timeOfDay,'Evening'))
+        timeBegin = 18;
+        timeEnd = 4;
+        timeToNext = 20*numPeriods + 1;
+    elseif(strcmp(timeOfDay,'Night'))
+        timeBegin = 22;
+        timeEnd = 8;
+        timeToNext = 16*numPeriods + 1;
+    end
+    
+    % perform calculations
+    start_index = (begin*24*numPeriods)+(numPeriods*timeBegin);
+    end_index = start_index + numPeriods*timeEnd - 1;
+    numerator_orig(1,1:numPeriods*timeEnd) = orig(1,start_index:end_index);
+    numerator_sim(1,1:numPeriods*timeEnd) = sim(1,start_index:end_index);
+    
+    if(strcmp(season,'Summer'))
+        for i = 2:numDays
+            start_index = end_index + timeToNext;      
+            end_index = start_index + numPeriods*timeEnd - 1;
+            numerator_orig(1,end+1:end+(numPeriods*timeEnd)) = orig(1,start_index:end_index);
+            numerator_sim(1,end+1:end+(numPeriods*timeEnd)) = sim(1,start_index:end_index);
+        end
+        
+    elseif(strcmp(season,'Spring/Fall'))
+        for i = 2:30
+            start_index = end_index + timeToNext;      
+            end_index = start_index + numPeriods*timeEnd - 1;
+            numerator_orig(1,end+1:end+(numPeriods*timeEnd)) = orig(1,start_index:end_index);
+            numerator_sim(1,end+1:end+(numPeriods*timeEnd)) = sim(1,start_index:end_index);
+        end
+        start_index = (212*24*numPeriods) + numPeriods*timeBegin;
+        end_index = start_index + numPeriods*timeEnd - 1;
+        numerator_orig(1,end+1:end+(numPeriods*timeEnd)) = orig(1,start_index:end_index);
+        numerator_sim(1,end+1:end+(numPeriods*timeEnd)) = sim(1,start_index:end_index);
+        for i = 2:31
+            start_index = end_index + timeToNext;      
+            end_index = start_index + numPeriods*timeEnd - 1;
+            numerator_orig(1,end+1:end+(numPeriods*timeEnd)) = orig(1,start_index:end_index);
+            numerator_sim(1,end+1:end+(numPeriods*timeEnd)) = sim(1,start_index:end_index);
+        end
+        
+    elseif(strcmp(season,'Winter'))
+        for i = 2:60
+            start_index = end_index + timeToNext;      
+            end_index = start_index + numPeriods*timeEnd - 1;
+            numerator_orig(1,end+1:end+(numPeriods*timeEnd)) = orig(1,start_index:end_index);
+            numerator_sim(1,end+1:end+(numPeriods*timeEnd)) = sim(1,start_index:end_index);
+        end
+        start_index = numPeriods*timeBegin;
+        end_index = start_index + numPeriods*timeEnd - 1;
+        numerator_orig(1,end+1:end+(numPeriods*timeEnd)) = orig(1,start_index:end_index);
+        numerator_sim(1,end+1:end+(numPeriods*timeEnd)) = sim(1,start_index:end_index);
+        for i = 2:90
+            start_index = end_index + timeToNext;      
+            end_index = start_index + numPeriods*timeEnd - 1;
+            numerator_orig(1,end+1:end+(numPeriods*timeEnd)) = orig(1,start_index:end_index);
+            numerator_sim(1,end+1:end+(numPeriods*timeEnd)) = sim(1,start_index:end_index);
+        end
+    end
+    orig_max = max(numerator_orig/max_data);
+    sim_max = max(numerator_sim/max_data);
+    orig_min = min(numerator_orig/max_data);
+    sim_min = min(numerator_sim/max_data);
+    orig_sum = sum(numerator_orig);
+    sim_sum = sum(numerator_sim);
+    orig_capfactor = orig_sum/(max_data*numHours*numPeriods);
+    sim_capfactor = sim_sum/(max_data*numHours*numPeriods);
+end

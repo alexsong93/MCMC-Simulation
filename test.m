@@ -1,24 +1,50 @@
 %tester for profiling
 
-data = 'WindPower.csv';
+data = 'WindPower2004.csv';
 order = 2;
 num = 8;
 intv = 10;
 unit = 'minute(s)';
 len = 3;
+isLeapYear = true;
 
-% calculate length of simulated data based on time interval and unit
-if(strcmp(unit,'minute(s)')==1)
-    len = floor((525949*len)/intv);
-elseif(strcmp(unit,'hour(s)')==1)
-    len = floor((8766*len)/intv);
-else
-    len = floor((365*len)/intv);
-end
+%[BIC,data_orig,data_simul,states] = MCMC_Simul(data,order,num,len)     
+%   This function takes in some time-series data and generates a simulation
+%   of that data using the Markov Chain Monte Carlo (MCMC) technique. This
+%   function should be used with the MCMC_pre and the GUI gui to see the
+%   simulation visually using a simple UI.
+%
+%Inputs:
+%   data  - original data (wind speeds, wind power, electricity prices, etc.)
+%   order - order of the markov chain used to generate simulation
+%   num   - number of states desired in the markov chain
+%   intv  - time interval between each data point (eg. 1,10,etc.)
+%   unit  - unit of each time interval (eg. min, hours, days)
+%   len   - desired length of simulation
+%
+%Outputs:
+%   BIC         - Bayesian information criterion
+%   needed for GUI:
+%   data_orig   - original data in csv form
+%   data_simul  - simulated data
+%   states      - the range of values for each state
 
+% if(nargin~=6)                       % no/incorrect number of arguments
+%     errordlg('Please input 6 arguments.');
+% end
+
+data_orig = csvread(data);         % original data in csv form
+% % calculate length of simulated data based on time interval and unit
+% if(strcmp(unit,'minute(s)')==1)
+%     len = floor((525949*len)/intv);
+% elseif(strcmp(unit,'hour(s)')==1)
+%     len = floor((8766*len)/intv);
+% else
+%     len = floor((365*len)/intv);
+% end
+len = len*numel(data_orig);
 simul_len = len;
 data_simul=zeros(simul_len,1);
-data_orig = csvread(data);         % original data in csv form
 
 min_data = min(data_orig);
 data_orig = data_orig + -1.*min_data;
@@ -150,7 +176,7 @@ if(order == 1)
     % Simulation simul_len times
     for iter=2:simul_len
         u_rand = rand(1,1);
-        next_state = sum(C(start_row,:)<u_rand)+1;
+        next_state = sum(C(start,:)<u_rand)+1;
         %next_state = pickNextState(n,start,C);
         chosen_value=states(next_state) + (states(next_state+1)-...
                      states(next_state)).*rand(1,1);
@@ -181,11 +207,14 @@ else
         data_simul(iter)=chosen_value;
         
         toAdd = 0;
+        sumMat = zeros(1,order-1);
         for i = order-1:-1:1
             toAdd = toAdd + (numstates.^i).*(next_state-1);
-            next_state = sscanf(mat{start_row,i+1},'%f');
+            t = mat{start_row,i+1};
+            next_state = sscanf(t,'%d');
         end
-        toAdd = toAdd + sscanf(mat{start_row,2},'%f');
+        
+        toAdd = toAdd + next_state;
         start_row = toAdd;
         %toAdd = (numstates.^(order-1)).*(next_state-1);
 
@@ -232,6 +261,36 @@ data_orig = data_orig - -1.*min_data;
 data_simul = data_simul - -1.*min_data;
 states = states - -1.*min_data;
 
+%% Calculate annual capacity factor
+
+orig = data_orig';
+sim = data_simul';
+
+% Summer %
+numerator_orig = [];
+numerator_sim = [];
+
+% morning
+if(isLeapYear==true) 
+    start_index = (121*24*6)+(6*6);
+else
+    start_index = (120*24*6)+(6*6);
+end
+end_index = start_index + 6*7 - 1;
+numerator_orig(1,1:42) = orig(1,start_index:end_index);
+numerator_sim(1,1:42) = sim(1,start_index:end_index);
+
+for i = 2:153
+    start_index = end_index + 103;
+    end_index = start_index + 6*7 - 1;
+    numerator_orig(1,end+1:end+42) = orig(1,start_index:end_index);
+    numerator_sim(1,end+1:end+42) = sim(1,start_index:end_index);
+end
+
+orig_sum = sum(numerator_orig);
+sim_sum = sum(numerator_sim);
+orig_capfactor = orig_sum/(max_data*1071*6);
+sim_capfactor = sim_sum/(max_data*1071*6);
 
 % % Plotting the results - uncomment when testing/not using the GUI
 % %plotting 'training' and simulated time series
@@ -285,6 +344,7 @@ states = states - -1.*min_data;
 % title ('pdf of original and simulated time series');
 % xlabel('Wind Power Output (MW)');ylabel('Density');
 % hold off
+
 
 
 
