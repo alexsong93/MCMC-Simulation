@@ -22,7 +22,7 @@ function varargout = Pre_MCMC(varargin)
 
 % Edit the above text to modify the response to help Pre_MCMC
 
-% Last Modified by GUIDE v2.5 10-Jul-2013 22:58:54
+% Last Modified by GUIDE v2.5 29-Jul-2013 02:58:01
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -258,15 +258,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-% --- Executes on button press in submit_push.
-function submit_push_Callback(hObject, eventdata, handles)
-% hObject    handle to submit_push (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-GUI;
-
-
 % --- Executes on selection change in orig_len_popup.
 function orig_len_popup_Callback(hObject, eventdata, handles)
 % hObject    handle to orig_len_popup (see GCBO)
@@ -314,6 +305,10 @@ leap_no = get(hObject,'Value');
 setappdata(hMainGui, 'leap_no', leap_no);
 leap_no = getappdata(hMainGui, 'leap_no'); %#ok<*NASGU>
 
+leap_yes = get(handles.yes_radio,'Value');
+setappdata(hMainGui, 'leap_yes', leap_yes);
+leap_yes = getappdata(hMainGui, 'leap_yes'); %#ok<*NASGU>
+
 
 % --- Executes on button press in yes_radio.
 function yes_radio_Callback(hObject, eventdata, handles)
@@ -333,6 +328,11 @@ leap_yes = get(hObject,'Value');
 setappdata(hMainGui, 'leap_yes', leap_yes);
 leap_yes = getappdata(hMainGui, 'leap_yes'); %#ok<*NASGU>
 
+leap_no = get(handles.no_radio,'Value');
+setappdata(hMainGui, 'leap_no', leap_no);
+leap_no = getappdata(hMainGui, 'leap_no'); %#ok<*NASGU>
+
+
 % --- Executes on selection change in leap_popup.
 function leap_popup_Callback(hObject, eventdata, handles)
 % hObject    handle to leap_popup (see GCBO)
@@ -343,9 +343,10 @@ function leap_popup_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from leap_popup
 
 hMainGui = getappdata(0, 'hMainGui');
-leap_value = get(hObject, 'String');
+leap_value = cellstr(get(hObject,'String'));
+leap_value = leap_value{get(hObject, 'Value')};
 setappdata(hMainGui, 'leap_value', leap_value);
-orig_length_value = getappdata(hMainGui, 'leap_value');
+leap_value = getappdata(hMainGui, 'leap_value');
 
 
 % --- Executes during object creation, after setting all properties.
@@ -353,6 +354,7 @@ function leap_popup_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to leap_popup (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
+
 
 % Hint: popupmenu controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
@@ -363,6 +365,28 @@ end
 set(hObject,'Enable','off');
 
 
+% --- Executes on button press in yes_sample.
+function yes_sample_Callback(hObject, eventdata, handles)
+% hObject    handle to yes_sample (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of yes_sample
+
+if(~get(hObject,'Value'))
+    set(hObject,'Value',1);
+end
+
+set(handles.seasons_check,'Enable','on');
+set(handles.morn_check,'Enable','on');
+set(handles.no_sample,'Value',0);
+
+hMainGui = getappdata(0, 'hMainGui');
+no_sample = get(handles.no_sample,'Value');
+setappdata(hMainGui, 'no_sample', no_sample);
+no_sample = getappdata(hMainGui, 'no_sample'); %#ok<*NASGU>
+
+
 % --- Executes on button press in seasons_check.
 function seasons_check_Callback(hObject, eventdata, handles)
 % hObject    handle to seasons_check (see GCBO)
@@ -371,22 +395,74 @@ function seasons_check_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of seasons_check
 
+hMainGui = getappdata(0, 'hMainGui');
+seasons_check = get(hObject, 'Value');
+setappdata(hMainGui, 'seasons_check', seasons_check);
+seasons_check = getappdata(hMainGui, 'seasons_check');
 
-% --- Executes on button press in precise_check.
-function precise_check_Callback(hObject, eventdata, handles)
-% hObject    handle to precise_check (see GCBO)
+
+% --- Executes during object creation, after setting all properties.
+function seasons_check_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to leap_popup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+set(hObject,'Enable','off');
+
+
+% --- Executes on button press in morn_check.
+function morn_check_Callback(hObject, eventdata, handles)
+% hObject    handle to morn_check (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of precise_check
+% Hint: get(hObject,'Value') returns toggle state of morn_check
 
-if(get(hObject,'Value'))
-    set(handles.morn_radio,'Enable','on');
-    set(handles.hourly_radio,'Enable','on');
-else
-    set(handles.morn_radio,'Enable','off');
-    set(handles.hourly_radio,'Enable','off');
+hMainGui = getappdata(0, 'hMainGui');
+morn_check = get(hObject,'Value');
+setappdata(hMainGui, 'morn_check', morn_check);
+morn_check = getappdata(hMainGui, 'morn_check'); %#ok<*NASGU>
+
+
+% --- Executes during object creation, after setting all properties.
+function morn_check_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to morn_check (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+set(hObject,'Enable','off');
+
+
+% --- Executes on button press in no_sample.
+function no_sample_Callback(hObject, eventdata, handles)
+% hObject    handle to no_sample (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of no_sample
+
+if(~get(hObject,'Value'))
+    set(hObject,'Value',1);
 end
+set(handles.yes_sample,'Value',0);
+
+set(handles.seasons_check,'Enable','off');
+set(handles.morn_check,'Enable','off');
+
+hMainGui = getappdata(0, 'hMainGui');
+no_sample = get(hObject,'Value');
+setappdata(hMainGui, 'no_sample', no_sample);
+no_sample = getappdata(hMainGui, 'no_sample'); %#ok<*NASGU>
+
+set(handles.seasons_check,'Value',0);
+seasons_check = get(handles.seasons_check, 'Value');
+setappdata(hMainGui, 'seasons_check', seasons_check);
+seasons_check = getappdata(hMainGui, 'seasons_check');
+
+set(handles.morn_check,'Value',0);
+morn_check = get(handles.morn_check,'Value');
+setappdata(hMainGui, 'morn_check', morn_check);
+morn_check = getappdata(hMainGui, 'morn_check'); %#ok<*NASGU>
 
 
 % --- Executes on button press in rolling_no_radio.
@@ -416,87 +492,6 @@ if(~get(hObject,'Value'))
 end
 set(handles.rolling_no_radio,'Value',0);
 
-
-% --- Executes on button press in yes_sample.
-function yes_sample_Callback(hObject, eventdata, handles)
-% hObject    handle to yes_sample (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of yes_sample
-
-if(~get(hObject,'Value'))
-    set(hObject,'Value',1);
-end
-if(get(handles.precise_check,'Value'))
-    set(handles.morn_radio,'Enable','on');
-    set(handles.hourly_radio,'Enable','on');
-end
-set(handles.no_sample,'Value',0);
-
-set(handles.seasons_check,'Enable','on');
-set(handles.precise_check,'Enable','on');
-
-
-% --- Executes on button press in no_sample.
-function no_sample_Callback(hObject, eventdata, handles)
-% hObject    handle to no_sample (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of no_sample
-
-if(~get(hObject,'Value'))
-    set(hObject,'Value',1);
-end
-set(handles.yes_sample,'Value',0);
-
-set(handles.seasons_check,'Enable','off');
-set(handles.precise_check,'Enable','off');
-set(handles.morn_radio,'Enable','off');
-set(handles.hourly_radio,'Enable','off');
-
-hMainGui = getappdata(0, 'hMainGui');
-no_sample = get(hObject,'Value');
-setappdata(hMainGui, 'no_sample', no_sample);
-no_sample = getappdata(hMainGui, 'no_sample'); %#ok<*NASGU>
-
-
-% --- Executes on button press in morn_radio.
-function morn_radio_Callback(hObject, eventdata, handles)
-% hObject    handle to morn_radio (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of morn_radio
-
-if(~get(hObject,'Value'))
-    set(hObject,'Value',1);
-end
-
-set(handles.hourly_radio,'Value',0);
-hMainGui = getappdata(0, 'hMainGui');
-morn_sample = get(hObject,'Value');
-setappdata(hMainGui, 'morn_sample', morn_sample);
-morn_sample = getappdata(hMainGui, 'morn_sample'); %#ok<*NASGU>
-
-% --- Executes on button press in hourly_radio.
-function hourly_radio_Callback(hObject, eventdata, handles)
-% hObject    handle to hourly_radio (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of hourly_radio
-
-if(~get(hObject,'Value'))
-    set(hObject,'Value',1);
-end
-
-set(handles.morn_radio,'Value',0);
-hMainGui = getappdata(0, 'hMainGui');
-hourly_sample = get(hObject,'Value');
-setappdata(hMainGui, 'hourly_sample', hourly_sample);
-hourly_sample = getappdata(hMainGui, 'hourly_sample'); %#ok<*NASGU>
 
 
 % --- Executes on selection change in type_popup.
@@ -543,3 +538,13 @@ function type_unit_text_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in submit_push.
+function submit_push_Callback(hObject, eventdata, handles)
+% hObject    handle to submit_push (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+close(findobj('type','figure','name','GUI'));
+GUI;
