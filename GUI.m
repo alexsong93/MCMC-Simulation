@@ -22,7 +22,7 @@ function varargout = GUI(varargin)
 
 % Edit the above text to modify the response to help GUI
 
-% Last Modified by GUIDE v2.5 29-Jul-2013 00:35:53
+% Last Modified by GUIDE v2.5 20-Aug-2013 17:03:55
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -177,7 +177,6 @@ end
 % 
 % % plot training and simulated data
 if(handles.morn_check == 0 && handles.seasons_check == 1)
-    hold(handles.orig_data,'on')
     plot(handles.orig_data,data_orig{4},'g');
     %axis(handles.orig_data,[0 144*7 0 max(max(data_simul{1}), max(data_orig{1}))]);
     title(handles.orig_data,'original wind data');
@@ -190,10 +189,8 @@ if(handles.morn_check == 0 && handles.seasons_check == 1)
     %axis(handles.orig_data,[0 144*7 0 max(max(data_simul{1}), max(data_orig{1}))]);
     title(handles.sim_data,'simulated wind data');
     ylabel(handles.sim_data,'Wind Power in KW');
-    xlabel(handles.orig_data,strcat('Time ','(in',num2str(interval_value),unit_value,')'));
-    hold(handles.orig_data,'off')
+    xlabel(handles.sim_data,strcat('Time ','(in',num2str(interval_value),unit_value,')'));
 elseif(handles.morn_check == 0 && handles.seasons_check == 0)
-    hold(handles.orig_data,'on')
     plot(handles.orig_data,data_orig{1},'g');
     %axis(handles.orig_data,[0 144*7 0 max(max(data_simul{1}), max(data_orig{1}))]);
     title(handles.orig_data,'original wind data');
@@ -206,10 +203,8 @@ elseif(handles.morn_check == 0 && handles.seasons_check == 0)
     %axis(handles.orig_data,[0 144*7 0 max(max(data_simul{1}), max(data_orig{1}))]);
     title(handles.sim_data,'simulated wind data');
     ylabel(handles.sim_data,'Wind Power in KW');
-    xlabel(handles.orig_data,strcat('Time ','(in',num2str(interval_value),unit_value,')'));
-    hold(handles.orig_data,'off')
+    xlabel(handles.sim_data,strcat('Time ','(in',num2str(interval_value),unit_value,')'));
 elseif(handles.morn_check == 1 && handles.seasons_check == 1)
-    hold(handles.orig_data,'on')
     plot(handles.orig_data,data_orig{13},'g');
     %axis(handles.orig_data,[0 144*7 0 max(max(data_simul{1}), max(data_orig{1}))]);
     title(handles.orig_data,'original wind data');
@@ -222,10 +217,8 @@ elseif(handles.morn_check == 1 && handles.seasons_check == 1)
     %axis(handles.orig_data,[0 144*7 0 max(max(data_simul{1}), max(data_orig{1}))]);
     title(handles.sim_data,'simulated wind data');
     ylabel(handles.sim_data,'Wind Power in KW');
-    xlabel(handles.orig_data,strcat('Time ','(in',num2str(interval_value),unit_value,')'));
-    hold(handles.orig_data,'off')
+    xlabel(handles.sim_data,strcat('Time ','(in',num2str(interval_value),unit_value,')'));
 elseif(handles.morn_check == 1 && handles.seasons_check == 0)
-    hold(handles.orig_data,'on')
     plot(handles.orig_data,data_orig{5},'g');
     %axis(handles.orig_data,[0 144*7 0 max(max(data_simul{1}), max(data_orig{1}))]);
     title(handles.orig_data,'original wind data');
@@ -238,8 +231,7 @@ elseif(handles.morn_check == 1 && handles.seasons_check == 0)
     %axis(handles.orig_data,[0 144*7 0 max(max(data_simul{1}), max(data_orig{1}))]);
     title(handles.sim_data,'simulated wind data');
     ylabel(handles.sim_data,'Wind Power in KW');
-    xlabel(handles.orig_data,strcat('Time ','(in',num2str(interval_value),unit_value,')'));
-    hold(handles.orig_data,'off')
+    xlabel(handles.sim_data,strcat('Time ','(in',num2str(interval_value),unit_value,')'));
 end
 
 
@@ -366,6 +358,8 @@ function plotPdf(pdf_plot,data_orig,data_simul,unit_value,interval_value,numdays
         xlabel(pdf_plot,'Wind Power Output (KW)');ylabel(pdf_plot,'Density');
         grid(pdf_plot,'on');
     end
+
+
 
 % --------------------------------------------------------------------
 
@@ -757,4 +751,16 @@ if(handles.morn_check == 1 && handles.seasons_check == 0)
             handles.unit_value,handles.interval_value,2,4)
     plotPdf(handles.pdf_plot,handles.data_orig,handles.data_simul,...
             handles.unit_value,handles.interval_value,2,4,handles.states)    
+end
+
+
+% --- Executes on button press in simul_data_push.
+function simul_data_push_Callback(hObject, eventdata, handles)
+% hObject    handle to simul_data_push (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+simulated_data = handles.data_simul(end);
+f = uiputfile('*.csv','Save Simulated Data As');
+if(any(f))
+    csvwrite(f,simulated_data);
 end

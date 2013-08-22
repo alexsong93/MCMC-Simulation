@@ -9,7 +9,7 @@ function [cap_factors,data_orig,data_simul,states] = MCMC_Simul(data,order,...
 %[BIC,data_orig,data_simul,states] = MCMC_Simul(data,order,num,len)     
 %   This function takes in some time-series data and generates a simulation
 %   of that data using the Markov Chain Monte Carlo (MCMC) technique. This
-%   function should be used with the MCMC_pre and the GUI gui to see the
+%   function should be used with the Pre_MCMC and the GUI gui to see the
 %   simulation visually using a simple UI.
 %
 %Inputs:
@@ -19,7 +19,13 @@ function [cap_factors,data_orig,data_simul,states] = MCMC_Simul(data,order,...
 %   intv  - time interval between each data point (eg. 1,10,etc.)
 %   unit  - unit of each time interval (eg. min, hours, days)
 %   len   - desired length of simulation
-%
+%   orig_length - length of original data
+%   leap_yes - there is a leap yera
+%   leap_no - no leap year
+%   leap_value - 1 or 0
+%   seasons_check - seasons checked
+%   morn_check - time of day checked
+
 %Outputs:
 %   BIC         - Bayesian information criterion
 %   needed for GUI:
@@ -68,8 +74,8 @@ for i=1:orig_length
         yeardata = zeros(1, yearLength/intv);
         last = last + yearLength/intv;
     end
-%     yeardata(1 : numel(orig_data(start : last))) = orig_data(start : last);
-    yeardata(1 : numel(orig_data(start : last-1))) = orig_data(start : last-orig_length);
+     yeardata = orig_data(start : last);
+%    yeardata(1 : numel(orig_data(start : last-1))) = orig_data(start : last-orig_length);
     yearly_orig_data{1,i} = yeardata;
     start = last + 1;
 end
@@ -530,28 +536,30 @@ for k = 1:numel(data_orig)
         end
         
         count = 1;
-        if(morn_check==1)
-            for i=1:numel(indicator{k})-order
-                minus = 1;
-                if(indicator{k}(i) == 1)
-                    %matrix(2:end,i) = matrix(1,i);
-                    matrix(2:end,i) = tag{k}(count,1:end-minus);
-                    minus = minus + 1;
-                else
-                    continue;
-                end
-                back = 1;
-                j = 3;
-                while(back < order-1)
-                    %matrix(j:end,i-back) = matrix(1,i);
-                    matrix(j:end,i-back) = tag{k}(count,1:end-minus);
-                    back = back + 1;
-                    j = j + 1;
-                    minus = minus + 1;
-                end
-                count = count + 1;
-            end
-        end
+        
+        % for tag values
+%         if(morn_check==1)
+%             for i=1:numel(indicator{k})-order
+%                 minus = 1;
+%                 if(indicator{k}(i) == 1)
+%                     %matrix(2:end,i) = matrix(1,i);
+%                     matrix(2:end,i) = tag{k}(count,1:end-minus);
+%                     minus = minus + 1;
+%                 else
+%                     continue;
+%                 end
+%                 back = 1;
+%                 j = 3;
+%                 while(back < order-1)
+%                     %matrix(j:end,i-back) = matrix(1,i);
+%                     matrix(j:end,i-back) = tag{k}(count,1:end-minus);
+%                     back = back + 1;
+%                     j = j + 1;
+%                     minus = minus + 1;
+%                 end
+%                 count = count + 1;
+%             end
+%         end
         
         ngrams = cellstr(num2str( matrix' ));
         
@@ -583,22 +591,23 @@ for k = 1:numel(data_orig)
         [g,~] = grp2idx([xy;ngrams]);  % map ngrams to numbers starting from 1
         s1 = g(((M^order)+1):end);
         s2 = x((order+1):end);          % items following the ngrams
-        if(morn_check==1)
-            indCount = 1;
-            for i=1:numel(indicator{k})-order
-                count = 0;
-                minus = 0;
-                if(indicator{k}(i) == 1)
-                    count = count + 1;
-                    while(count <= order)
-                        s2(i-count+1) = tag{k}(indCount,end-minus);
-                        count = count + 1;
-                        minus = minus + 1;
-                    end
-                    indCount = indCount + 1;
-                end
-            end
-        end
+        %for tag values
+%         if(morn_check==1)
+%             indCount = 1;
+%             for i=1:numel(indicator{k})-order
+%                 count = 0;
+%                 minus = 0;
+%                 if(indicator{k}(i) == 1)
+%                     count = count + 1;
+%                     while(count <= order)
+%                         s2(i-count+1) = tag{k}(indCount,end-minus);
+%                         count = count + 1;
+%                         minus = minus + 1;
+%                     end
+%                     indCount = indCount + 1;
+%                 end
+%             end
+%         end
 
         P = full(sparse(s1,s2,1,M^order,M));    
         temp = P;                       % trans matrix of frequencies (before dividing)
@@ -888,11 +897,11 @@ if((morn_check == 0 && seasons_check == 0) || (morn_check == 1 && seasons_check 
             last = last + yearLength/intv;
         end
         if(morn_check == 0 && seasons_check == 0)
-%             yeardata(1 : numel(data_simul{1}(start : last))) = data_simul{1}(start : last);
-            yeardata(1 : numel(data_simul{1}(start : last-len))) = data_simul{1}(start : last-len);
+             yeardata = data_simul{1}(start : last);
+%            yeardata(1 : numel(data_simul{1}(start : last-len))) = data_simul{1}(start : last-len);
         elseif(morn_check == 1 && seasons_check == 0)
-%             yeardata(1 : numel(sim(start : last))) = sim(start : last);
-            yeardata(1 : numel(sim(start : last-len))) = sim(start : last-len);
+            yeardata = sim(start : last);
+%            yeardata(1 : numel(sim(start : last-len))) = sim(start : last-len);
         end
         yearly_sim_data{1,i} = yeardata;
         start = last + 1;
