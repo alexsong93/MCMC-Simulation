@@ -1,220 +1,106 @@
-function [BIC,data_orig,data_simul,states,cap_factors] = MCMC_Simul(data,order,num,intv,unit,len)
+function [BIC,originalData,simulatedData,stateRangeArray,cap_factors] = ...
+    MCMC_Simul(data,order,numStates,intv,unit,simulationLength)
 
-%[BIC,data_orig,data_simul,states] = MCMC_Simul(data,order,num,len)     
-%   This function takes in some time-series data and generates a simulation
-%   of that data using the Markov Chain Monte Carlo (MCMC) technique. This
-%   function should be used with the MCMC_pre and the GUI gui to see the
-%   simulation visually using a simple UI.
-%
-%Inputs:
-%   data  - original data (wind speeds, wind power, electricity prices, etc.)
-%   order - order of the markov chain used to generate simulation
-%   num   - number of states desired in the markov chain
-%   intv  - time interval between each data point (eg. 1,10,etc.)
-%   unit  - unit of each time interval (eg. min, hours, days)
-%   len   - desired length of simulation
-%
-%Outputs:
-%   BIC         - Bayesian information criterion
-%   needed for GUI:
-%   data_orig   - original data in csv form
-%   data_simul  - simulated data
-%   states      - the range of values for each state
-%   cap_factors - average annual capacity factors for mornings, Afternoons,
-%                 evenings, and Nights                  
+originalData = csvread(data);
+simulatedDataLength = simulationLength*numel(originalData);
+simulatedData = zeros(simulatedDataLength,1);
 
-% if(nargin~=6)                       % no/incorrect number of arguments
-%     errordlg('Please input 6 arguments.');
-% end
-
-data_orig = csvread(data);         % original data in csv form
-% calculate length of simulated data based on time interval and unit
-% if(strcmp(unit,'minute(s)')==1)
-%     %len = floor((525949*len)/intv);
-% elseif(strcmp(unit,'hour(s)')==1)
-%     %len = floor((8766*len)/intv);
-% else
-%     %len = floor((365*len)/intv);
-% end
-len = len*numel(data_orig);
-simul_len = len;
-data_simul=zeros(simul_len,1);
-
-% account for negative values
-min_data = min(data_orig);
-if(min_data < 0)
-    data_orig = data_orig + -1.*min_data;
-end
-
-max_data=max(data_orig);
-numstates = num;
-width_state = max_data/numstates;   % shows the range of values that make up one state
-lim = width_state*numstates;
-states = 0:width_state:lim;
-
-%% transition matrix for first order markov chain
-if(order == 1) 
-    N = histc(data_orig,states);   
-    P=zeros(numel(N));
-    for iter=1:numel(data_orig)-1
-        transit=data_orig(iter:iter+1);
-        state1=floor(transit(1)/width_state);
-        state2=floor(transit(2)/width_state);
-        P(state1+1,state2+1)=P(state1+1,state2+1)+1;
-    end
-    temp = P;                       % trans matrix of frequencies (before dividing)
-    last=data_orig(end);
-    state_last=floor(last/width_state);
-    N(state_last+1)=N(state_last+1)-1;
-
-    for iter=1:numel(N)-1
-        P(iter,1:end)=P(iter,1:end)./N(iter);    
-    end
-    P=P(1:end-1,1:end-1);
-%   figure 
-%   spy(P)                          % uncomment to see sparsity of transition matrix
-    
-% Cumulative transition matrix
-    n=numel(P(1,1:end));
-    C=zeros(size(P));
-    for iter=1:n
-        for iter1=1:n
-            C(iter,iter1)=sum(P(iter,1:iter1));
-        end
-    end
+maxData = max(originalData);
+stateWidth = maxData/numStates;
+stateRangeArray = 0:stateWidth:maxData;
 
 %% transition matrix for higher order Markov chain    
-else
-    x=zeros(1,numel(data_orig));
-    for iter1 = 1:numel(data_orig)     %make values into states
-        if(data_orig(iter1)==0)
-            state = 1;
-        elseif(data_orig(iter1)==max_data)
-            state = numstates;
-        else
-            state = ceil(data_orig(iter1)/width_state);
+%convert original data into states
+stateArray = ceil(originalData/stateWidth);
+%if converted value is 0, change to 1;
+stateArray(stateArray==0) = 1;
+maxState = max(stateArray);
+
+% extract contiguous sequences of n items from the above
+matrix = zeros(order,numel(stateArray(1:end-order)));
+for i=1:order
+    matrix(i,1:end) = stateArray(i:end-(order-i+1));
+end
+ngrams = cellstr(num2str(matrix'));
+
+% create all possible combinations of the n items
+str1 = 'ndgrid(1:maxState';
+str2 = 'cellstr(num2str([out{1}(:)';
+for i = 1:order-1
+    str1 = strcat(str1, ',1:maxState');
+    str2 = strcat(str2, ',out{', num2str(i+1), '}(:)');
+end
+str1 = strcat(str1,')');
+str2 = strcat(str2,']))');
+out = {};
+for i = 1:order
+    [out{1:order}] = eval(str1);
+end
+possibleCombinations = eval(str2);
+
+str = 'textscan(sprintf(''%s\n'',possibleCombinations{:}),''';
+for i = 1:order
+    str = strcat(str,'%s');
+end
+str = strcat(str,''')');
+q = eval(str);
+mat = str2double([q{:}]);
+
+[g,~] = grp2idx([possibleCombinations;ngrams]);  % map ngrams to numbers starting from 1
+s1 = g(((maxState^order)+1):end);
+s2 = stateArray((order+1):end);          % items following the ngrams
+
+P = full(sparse(s1,s2,1,maxState^order,maxState));    
+temp = P;                       % trans matrix of frequencies (before dividing)
+
+dim = size(P);
+columnLength = dim(1);
+rowLength = dim(2);
+
+s = zeros(1,columnLength);
+for iter = 1:columnLength
+    s(iter) = sum(P(iter,:));
+end
+
+for i = 1:columnLength
+    for j = 1:rowLength
+        if(s(i) == 0)
+            break;
         end
-        x(iter1) = state;
+        P(i,j) = P(i,j)./s(i);    %trans matrix of probabilities
     end
-
-    M = max(x);
-
-    % extract contiguous sequences of n items from the above
-    matrix = zeros(order,numel(x(1:end-order)));
-    for i=1:order
-        matrix(i,1:end) = x(i:end-(order-i+1));
-    end
-    ngrams = cellstr(num2str( matrix' ));
-    
-    % create all possible combinations of the n items
-    str1 = 'ndgrid(1:M,1:M';
-    str2 = 'cellstr(num2str([out{1}(:),out{2}(:)';
-    for i = 2:order-1
-        str1 = strcat(str1, ',1:M');
-        str2 = strcat(str2, ',out{', num2str(i+1), '}(:)');
-    end
-    str1 = strcat(str1,')');
-    str2 = strcat(str2,']))');
-    out = {};
-    for i = 1:order
-        [out{1:order}] = eval(str1);
-    end
-    xy = eval(str2);
-    
-    str = 'textscan(sprintf(''%s\n'',xy{:}),''';
-    for i=1:order
-        str = strcat(str,'%s');
-    end
-    str = strcat(str,''')');
-    q = eval(str);
-    mat = [q{:}];
-    
-    [g,~] = grp2idx([xy;ngrams]);  % map ngrams to numbers starting from 1
-    s1 = g(((M^order)+1):end);
-    s2 = x((order+1):end);          % items following the ngrams
-    
-    P = full(sparse(s1,s2,1,M^order,M));    
-    temp = P;                       % trans matrix of frequencies (before dividing)
-
-    dim=size(P);
-    col_len=dim(1);
-    row_len=dim(2);
-
-    s = zeros(1,col_len);
-    for iter=1:col_len
-        s(iter)=sum(P(iter,:));
-    end
-
-    for iter1=1:col_len
-        for iter2=1:row_len
-            if(s(iter1)==0)
-                break;
-            end
-            P(iter1,iter2)=P(iter1,iter2)./s(iter1);    %trans matrix of probabilities
-        end
-    end
+end
 %   figure(2)
 %   spy(P,5)                        % uncomment to see sparsity of transition matrix
 
-%   cumulative transition matrix
-    C=zeros(size(P));
-    for iter1=1:col_len
-        for iter2=1:row_len
-            C(iter1,iter2)=sum(P(iter1,1:iter2));
-        end
+% cumulative transition matrix
+C = zeros(size(P));
+for i = 1:columnLength
+    for j = 1:rowLength
+        C(i,j) = sum(P(i,1:j));
     end
 end
 
 %% Simulating Wind Data (Monte Carlo)
-% for first order
-if(order == 1) 
-    start=randi([1,n-1],1);         % randomly choose wind state at hr 0
-    chosen_value=states(start) + (states(start+1)-states(start)).*rand(1,1);
-    data_simul(1)=chosen_value;
+startRow = randi([1,columnLength-1],1);
+%check if startRow is not all zeros
+while(isValid(startRow,C) == 0)
+    startRow=randi([1,columnLength-1],1);
+end
 
-    % Simulation simul_len times
-    for iter=2:simul_len
-        u_rand = rand(1,1);
-        next_state = 1;
-        for j=1:n-1
-            if(C(start,j) < u_rand && u_rand <= C(start,j+1))
-                next_state = j+1;
-            end
-        end
-        chosen_value=states(next_state) + (states(next_state+1)-...
-                     states(next_state)).*rand(1,1);
-        data_simul(iter)=chosen_value;
-        start=next_state;
+for i = 1:simulatedDataLength
+    nextState = sum(C(startRow,:) < rand(1,1)) + 1;
+    simulatedData(i) = stateRangeArray(nextState) + ...
+        (stateRangeArray(nextState+1) - stateRangeArray(nextState)).*rand(1,1);
+    
+    toAdd = 0;
+    for j = order-1:-1:1
+        toAdd = toAdd + (numStates.^j).*(nextState-1);
+        nextState = mat(startRow,j+1);
     end
     
-% for higher order
-else                                    
-    start=randi([1,row_len-1],1);       % randomly choose wind state at hr 0
-    chosen_value=states(start) + (states(start+1)-states(start)).*rand(1,1);
-    data_simul(1)=chosen_value;
-
-    start_row=randi([1,col_len-1],1);
-
-    out = isValid(start_row,C); %check if start_row is not all zeros
-    while(out==0)
-        start_row=randi([1,col_len-1],1);
-        out = isValid(start_row,C);
-    end
-    
-    % Simulation simul_len times
-    for iter=2:simul_len
-        u_rand = rand(1,1);
-        next_state = sum(C(start_row,:)<u_rand)+1;
-        chosen_value=states(next_state) + (states(next_state+1)-...
-                     states(next_state)).*rand(1,1);
-        data_simul(iter)=chosen_value;
-        toAdd = 0;
-        for i = order-1:-1:1
-            toAdd = toAdd + (numstates.^i).*(next_state-1);
-            next_state = sscanf(mat{start_row,i+1},'%f');
-        end
-        toAdd = toAdd + sscanf(mat{start_row,2},'%f');
-        start_row = toAdd;
+    if(order ~= 1), startRow = toAdd + mat(startRow,2);
+    else startRow = nextState;
     end
 end
    
@@ -232,15 +118,15 @@ for i = 1:num_row
         end
     end
 end
-phi = (numstates.^order).*(numstates-1);           % no. of independent parameters 
-BIC = -2.*LL + phi.*log(numel(data_orig));
+phi = (numStates.^order).*(numStates-1);           % no. of independent parameters 
+BIC = -2.*LL + phi.*log(numel(originalData));
 
 % subtract back for negative numbers
-if(min_data < 0)
-    data_orig = data_orig - -1.*min_data;
-    data_simul = data_simul - -1.*min_data;
-    states = states - -1.*min_data;
-end
+%if(min_data < 0)
+%    originalData = originalData - -1.*min_data;
+%    simulatedData = simulatedData - -1.*min_data;
+%    states = states - -1.*min_data;
+%end
 
 %% Calculate average annual capacity factor
 cap_factors = [6,12];
@@ -260,7 +146,7 @@ for i = 1:2:6
     for j = 1:3:10
         [orig_capfactor,sim_capfactor,orig_max,sim_max,orig_min,sim_min] = ...
         calcCapFactors(Seasons(index),TimeOfDays(count),false,numPeriods,...
-                        max_data,data_orig,data_simul);
+                        maxData,originalData,simulatedData);
         cap_factors(i,j) = orig_capfactor;
         cap_factors(i,j+1) = orig_min;
         cap_factors(i,j+2) = orig_max;
