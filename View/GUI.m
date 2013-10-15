@@ -1,28 +1,5 @@
 function varargout = GUI(varargin)
-% GUI MATLAB code for GUI.fig
-%      GUI, by itself, creates a new GUI or raises the existing
-%      singleton*.
-%
-%      H = GUI returns the handle to a new GUI or the handle to
-%      the existing singleton*.
-%
-%      GUI('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in GUI.M with the given input arguments.
-%
-%      GUI('Property','Value',...) creates a new GUI or raises the
-%      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before GUI_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to GUI_OpeningFcn via varargin.
-%
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
-%
-% See also: GUIDE, GUIDATA, GUIHANDLES
-
-% Edit the above text to modify the response to help GUI
-
-% Last Modified by GUIDE v2.5 20-Jun-2013 00:24:13
+addpath('../Model');
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -63,6 +40,7 @@ guidata(hObject, handles);
 
 hMainGui = getappdata(0, 'hMainGui');
 filename = getappdata(hMainGui, 'filename');
+filename = strcat('../data/',filename);
 order_value = getappdata(hMainGui, 'order');
 order_value = str2double(order_value);
 numstates_value = getappdata(hMainGui, 'num');

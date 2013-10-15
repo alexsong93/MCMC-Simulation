@@ -1,28 +1,4 @@
 function varargout = Pre_MCMC(varargin)
-% PRE_MCMC MATLAB code for Pre_MCMC.fig
-%      PRE_MCMC, by itself, creates a new PRE_MCMC or raises the existing
-%      singleton*.
-%
-%      H = PRE_MCMC returns the handle to a new PRE_MCMC or the handle to
-%      the existing singleton*.
-%
-%      PRE_MCMC('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in PRE_MCMC.M with the given input arguments.
-%
-%      PRE_MCMC('Property','Value',...) creates a new PRE_MCMC or raises the
-%      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before Pre_MCMC_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to Pre_MCMC_OpeningFcn via varargin.
-%
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
-%
-% See also: GUIDE, GUIDATA, GUIHANDLES
-
-% Edit the above text to modify the response to help Pre_MCMC
-
-% Last Modified by GUIDE v2.5 10-Jul-2013 22:58:54
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
