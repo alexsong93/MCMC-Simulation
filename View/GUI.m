@@ -1,5 +1,4 @@
 function varargout = GUI(varargin)
-addpath('../Model');
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -40,7 +39,7 @@ guidata(hObject, handles);
 
 hMainGui = getappdata(0, 'hMainGui');
 filename = getappdata(hMainGui, 'filename');
-filename = strcat('../data/',filename);
+filename = strcat(filename);
 order_value = getappdata(hMainGui, 'order');
 order_value = str2double(order_value);
 numstates_value = getappdata(hMainGui, 'num');

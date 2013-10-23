@@ -1,5 +1,4 @@
-function [orig_capfactor,sim_capfactor,orig_max,sim_max,orig_min,sim_min] = ...
-    calcCapFactors(season,timeOfDay,isLeap,numPeriods,max_data,data_orig,data_simul)
+function [dividedData, numHours] = divideData(season,timeOfDay,isLeap,numPeriods,data_orig)
 % calculate the annual average capacity factors for different time of the
 % day for different seasons
 
@@ -67,67 +66,54 @@ elseif(strcmp(timeOfDay,'Night'))
 end
 
 
-
-
-% perform calculations
-orig = data_orig'; sim = data_simul';
-start_index = (begin*24*numPeriods)+(numPeriods*timeBegin);
-end_index = start_index + numPeriods*timeRange - 1;
-numerator_orig = []; numerator_simu = [];
+orig = data_orig';
+startIndex = (begin*24*numPeriods)+(numPeriods*timeBegin);
+endIndex = startIndex + numPeriods*timeRange - 1;
+numeratorOrig = [];
 if(strcmp(season,'Summer'))
     for i = 1:numDays
-        numerator_orig = [numerator_orig  orig(1,start_index:end_index)];
-        numerator_simu = [numerator_simu  sim(1,start_index:end_index)];
-        start_index = end_index + timeToNext;      
-        end_index = start_index + numPeriods*timeRange - 1;
+        numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+        startIndex = endIndex + timeToNext;      
+        endIndex = startIndex + numPeriods*timeRange - 1;
     end
 
 elseif(strcmp(season,'Spring/Fall'))
     for i = 1:30
-        numerator_orig = [numerator_orig  orig(1,start_index:end_index)];
-        numerator_simu = [numerator_simu  sim(1,start_index:end_index)];
-        start_index = end_index + timeToNext;      
-        end_index = start_index + numPeriods*timeRange - 1;
+        numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+        startIndex = endIndex + timeToNext;      
+        endIndex = startIndex + numPeriods*timeRange - 1;
     end
-    start_index = (212*24*numPeriods) + numPeriods*timeBegin;
-    end_index = start_index + numPeriods*timeRange - 1;
+    startIndex = (212*24*numPeriods) + numPeriods*timeBegin;
+    endIndex = startIndex + numPeriods*timeRange - 1;
     for i = 1:31
-        numerator_orig = [numerator_orig  orig(1,start_index:end_index)];
-        numerator_simu = [numerator_simu  sim(1,start_index:end_index)];
-        start_index = end_index + timeToNext;      
-        end_index = start_index + numPeriods*timeRange - 1;
+        numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+        startIndex = endIndex + timeToNext;      
+        endIndex = startIndex + numPeriods*timeRange - 1;
     end
 
 elseif(strcmp(season,'Winter'))
     for i = 1:61
         if(i ~= 61)
-            numerator_orig = [numerator_orig orig(1,start_index:end_index)];
+            numeratorOrig = [numeratorOrig orig(1,startIndex:endIndex)];
         else %end of file
-            numerator_orig = [numerator_orig orig(1,start_index:end)];
+            numeratorOrig = [numeratorOrig orig(1,startIndex:end)];
         end
-        numerator_simu = [numerator_simu sim(1,start_index:end_index)];
-        start_index = end_index + timeToNext;      
-        end_index = start_index + numPeriods*timeRange - 1;
+        startIndex = endIndex + timeToNext;      
+        endIndex = startIndex + numPeriods*timeRange - 1;
     end
-    start_index = numPeriods*timeBegin;
-    end_index = start_index + numPeriods*timeRange - 1;
+    startIndex = numPeriods*timeBegin;
+    endIndex = startIndex + numPeriods*timeRange - 1;
     lim = 0;
     if(isLeap == 0), lim = 90;
     else lim = 91;
     end
     for i = 1:lim
-        numerator_orig = [numerator_orig orig(1,start_index:end_index)];
-        numerator_simu = [numerator_simu sim(1,start_index:end_index)];
-        start_index = end_index + timeToNext;      
-        end_index = start_index + numPeriods*timeRange - 1;
+        numeratorOrig = [numeratorOrig orig(1,startIndex:endIndex)];
+        startIndex = endIndex + timeToNext;      
+        endIndex = startIndex + numPeriods*timeRange - 1;
     end
 end
-orig_max = max(numerator_orig/max_data);
-sim_max = max(numerator_simu/max_data);
-orig_min = min(numerator_orig/max_data);
-sim_min = min(numerator_simu/max_data);
-orig_sum = sum(numerator_orig);
-sim_sum = sum(numerator_simu);
-orig_capfactor = orig_sum/(max_data*numHours*numPeriods);
-sim_capfactor = sim_sum/(max_data*numHours*numPeriods);
+
+dividedData = numeratorOrig;
+
 end

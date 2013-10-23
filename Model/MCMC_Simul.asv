@@ -20,9 +20,8 @@ numHoursArray = zeros(1,12);
 index = 1;
 for i = 1:3
     for j = 1:4
-        [dividedData{index}, numHours]  = divideData(Seasons(i),TimeOfDays(j),...
+        [dividedData{index}, numHours  = divideData(Seasons(i),TimeOfDays(j),...
             0,numPeriods,originalData);
-        numHoursArray(index) = numHours;
         index = index + 1;
     end
 end
@@ -171,8 +170,8 @@ for i = 1:2:5
         sim_min  = min(simDataArray{index}/maxData);
         orig_sum = sum(dividedData{index});
         sim_sum  = sum(simDataArray{index});
-        orig_capfactor = orig_sum/(maxData*numHoursArray(index)*numPeriods);
-        sim_capfactor  = sim_sum/(maxData*numHoursArray(index)*numPeriods*simulationLength);
+        orig_capfactor = orig_sum/(maxData*numHours*numPeriods);
+        sim_capfactor  = sim_sum/(maxData*numHours*numPeriods);
         
         cap_factors(i,j) = orig_capfactor;
         cap_factors(i,j+1) = orig_min;
