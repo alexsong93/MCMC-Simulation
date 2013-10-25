@@ -8,7 +8,11 @@ maxData = max(originalData);
 stateWidth = maxData/numStates;
 stateRangeArray = 0:stateWidth:maxData;
 
+%add if statement to divide the data only if sample selection is selected
+
 %divide the data if sample selection is selected
+%need to check for leap years
+%for hours, not just minutes
 Seasons = cellstr(['Summer     ';'Spring/Fall';'Winter     ']);
 TimeOfDays = cellstr(['Morning  ';'Afternoon';'Evening  ';'Night    ']);
 numPeriods = 0;
@@ -134,7 +138,23 @@ for k = 1:numel(dividedData)
     
 end   
 
-%combineData;
+combinedSimData = combineSimData(simDataArray, simulationLength, numPeriods);
+simDataArray{end} = combinedSimData;
+
+%for testing
+simulatedData = simDataArray{end};
+
+
+
+
+
+
+
+
+
+
+
+
 
 %% Calculating the Bayesian information criterion (BIC)
 num_row = numel(P(1:end,1));
@@ -161,7 +181,7 @@ BIC = -2.*LL + phi.*log(numel(originalData));
 %end
 
 %% Calculate average annual capacity factor
-cap_factors = [];
+cap_factors = zeros(6,12);
 index = 1;
 for i = 1:2:5
     for j = 1:3:10

@@ -1,4 +1,4 @@
-function [dividedData, numHours] = divideData(season,timeOfDay,isLeap,numPeriods,data_orig)
+function [dividedData, numHours] = divideData(season,timeOfDay,isLeap,numPeriods,origData)
 % calculate the annual average capacity factors for different time of the
 % day for different seasons
 
@@ -66,7 +66,7 @@ elseif(strcmp(timeOfDay,'Night'))
 end
 
 
-orig = data_orig';
+orig = origData';
 startIndex = (begin*24*numPeriods)+(numPeriods*timeBegin);
 endIndex = startIndex + numPeriods*timeRange - 1;
 numeratorOrig = [];
@@ -93,10 +93,13 @@ elseif(strcmp(season,'Spring/Fall'))
 
 elseif(strcmp(season,'Winter'))
     for i = 1:61
-        if(i ~= 61)
-            numeratorOrig = [numeratorOrig orig(1,startIndex:endIndex)];
-        else %end of file
-            numeratorOrig = [numeratorOrig orig(1,startIndex:end)];
+        try
+            numeratorOrig = [numeratorOrig orig(1, startIndex:endIndex)];
+        catch err %end of file
+            if(strcmp(err.identifier,'MATLAB:badsubscript'))
+                numeratorOrig = [numeratorOrig orig(1,startIndex:end)];
+                numeratorOrig = [numeratorOrig orig(1,(1:endIndex - numel(orig)))];
+            end
         end
         startIndex = endIndex + timeToNext;      
         endIndex = startIndex + numPeriods*timeRange - 1;
