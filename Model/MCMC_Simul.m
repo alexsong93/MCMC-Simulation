@@ -8,10 +8,17 @@ maxData = max(originalData);
 stateWidth = maxData/numStates;
 stateRangeArray = 0:stateWidth:maxData;
 
-%add if statement to divide the data only if sample selection is selected
+
+% steps = 0;
+% for i = 1:numel(originalData)
+%     steps = steps + numel(originalData{i})*len;
+% end
+progressbar('Simulating...');
+step = 0;
+
 
 %divide the data if sample selection is selected
-%need to check for leap years
+%ignore/delete leap years!
 %for hours, not just minutes
 Seasons = cellstr(['Summer     ';'Spring/Fall';'Winter     ']);
 TimeOfDays = cellstr(['Morning  ';'Afternoon';'Evening  ';'Night    ']);
@@ -132,6 +139,13 @@ for k = 1:numel(dividedData)
         else startRow = nextState;
         end
         
+        %progress bar
+        step = step + 1;
+        frac2 = step / simulationLength;
+        frac1 = ((k-1) + frac2) / numel(originalData);
+        if(mod(step,100)==0)
+            progressbar(frac1);
+        end
     end
     
     simDataArray{k} = simulatedData;
@@ -205,5 +219,5 @@ for i = 1:2:5
     end
 end
 
-
+progressbar(1);
 end
