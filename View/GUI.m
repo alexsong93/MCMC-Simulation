@@ -22,15 +22,8 @@ end
 
 % --- Executes just before GUI is made visible.
 function GUI_OpeningFcn(hObject, eventdata, handles, varargin) %#ok<*INUSL>
-% This function has no output args, see OutputFcn.
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to GUI (see VARARGIN)
-
 % Choose default command line output for GUI
 handles.output = hObject;
-
 % Update handles structure
 guidata(hObject, handles);
 
@@ -46,7 +39,7 @@ numstates_value = getappdata(hMainGui, 'num');
 numstates_value = str2double(numstates_value);
 interval_value = getappdata(hMainGui, 'interval');
 interval_value = str2double(interval_value);
-unit_value = getappdata(hMainGui, 'unit');
+unit_value = getappdata(hMainGui, 'unit_value');
 length_value = getappdata(hMainGui, 'length');
 length_value = str2double(length_value);
 
@@ -55,15 +48,14 @@ orig_length_value = str2double(orig_length_value);
 leap_yes = getappdata(hMainGui, 'leap_yes');
 leap_no = getappdata(hMainGui, 'leap_no');
 leap_popup = getappdata(hMainGui, 'leap_popup');
-no_sample = getappdata(hMainGui, 'no_sample');
-no_sample = str2double(no_sample);
+yes_sample = getappdata(hMainGui, 'yes_sample');
 
 [BIC,data_orig,data_simul,states,cap_factors] = MCMC_Simul(filename,order_value,...
-    numstates_value,interval_value,unit_value,length_value,orig_length_value,leap_yes);   
+    numstates_value,interval_value,unit_value,length_value,orig_length_value,...
+    leap_yes,yes_sample);   
 
 % capacity table
 set(handles.cap_table,'data',cap_factors);
-
 set(handles.BIC_text,'String',BIC);
 set(handles.data_text,'String',filename);
 
@@ -72,6 +64,7 @@ handles.data_orig = data_orig;
 handles.data_simul = data_simul;
 handles.interval_value = interval_value;
 handles.states = states;
+handles.yes_sample = yes_sample;
 
 data = guidata(hObject);
 
@@ -146,12 +139,6 @@ function plotData(handles,data_orig,data_simul,index)
 
 % --- Outputs from this function are returned to the command line.
 function varargout = GUI_OutputFcn(hObject, eventdata, handles) 
-% varargout  cell array for returning output args (see VARARGOUT);
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Get default command line output from handles structure
 varargout{1} = handles.output;
 
 %set height of each row of table
@@ -167,117 +154,86 @@ function tabs_Callback(hObject, eventdata, handles) %#ok<*INUSD,*DEFNU>
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of tabs as text
-%        str2double(get(hObject,'String')) returns contents of tabs as a double
-
-
 % --- Executes during object creation, after setting all properties.
 function tabs_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to tabs (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on button press in pushbutton1.
-function pushbutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in pushbutton3.
-function pushbutton3_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
+%Displaying acf/pdf of different times if sample selection is selected
 function time_buttongroup_SelectionChangeFcn(hObject,eventdata, handles, data)
-switch get(eventdata.NewValue,'Tag')
-    case 'default'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,13);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,13);
-    case 'summerMorning'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,1);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,1);
-    case 'summerAfternoon'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,2);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,2);
-    case 'summerEvening'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,3);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,3);
-    case 'summerNight'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,4);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,4);
-    case 'sprfallMorning'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,5);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,5);
-    case 'sprfallAfternoon'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,6);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,6);
-    case 'sprfallEvening'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,7);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,7);
-    case 'sprfallNight'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,8);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,8);
-    case 'winterMorning'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,9);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,9);
-    case 'winterAfternoon'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,10);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,10);
-    case 'winterEvening'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,11);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,11);
-    case 'winterNight'
-        plotACF(handles,handles.unit_value,handles.data_orig,...
-            handles.data_simul,handles.interval_value,12);
-        plotPMF(handles,handles.data_orig,handles.data_simul,...
-            handles.states,12);
+if(handles.yes_sample==1)
+    switch get(eventdata.NewValue,'Tag')
+        case 'default'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,13);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,13);
+        case 'summerMorning'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,1);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,1);
+        case 'summerAfternoon'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,2);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,2);
+        case 'summerEvening'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,3);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,3);
+        case 'summerNight'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,4);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,4);
+        case 'sprfallMorning'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,5);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,5);
+        case 'sprfallAfternoon'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,6);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,6);
+        case 'sprfallEvening'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,7);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,7);
+        case 'sprfallNight'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,8);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,8);
+        case 'winterMorning'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,9);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,9);
+        case 'winterAfternoon'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,10);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,10);
+        case 'winterEvening'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,11);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,11);
+        case 'winterNight'
+            plotACF(handles,handles.unit_value,handles.data_orig,...
+                handles.data_simul,handles.interval_value,12);
+            plotPMF(handles,handles.data_orig,handles.data_simul,...
+                handles.states,12);
+    end
 end
 
 % --- Executes on button press in back_push.
 function back_push_Callback(hObject, eventdata, handles)
-% hObject    handle to back_push (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 Pre_MCMC;
 close(handles.GUI);
 
-
-% --------------------------------------------------------------------
-function Untitled_1_Callback(hObject, eventdata, handles)
-% hObject    handle to Untitled_1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)

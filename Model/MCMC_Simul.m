@@ -1,33 +1,37 @@
 function [BIC,dividedData,simDataArray,stateRangeArray,cap_factors] = ...
-    MCMC_Simul(data,order,numStates,intv,unit,simulationLength,originalLength,isLeap)
+    MCMC_Simul(data,order,numStates,intv,unit,simulationLength,originalLength,...
+    isLeap,yesSample)
 
 originalData = csvread(data);
-simDataArray = cell(1,13);
 
 maxData = max(originalData);
 stateWidth = maxData/numStates;
 stateRangeArray = 0:stateWidth:maxData;
+
+numPeriods = 0;
+if(strcmp(unit,'minute(s)')==1), numPeriods = 60/intv;
+elseif(strcmp(unit,'hour(s)')==1), numPeriods = 1/intv;
+end
+
+%remove feb 29th if leap year
+if(isLeap==1)
+     originalData(numPeriods*24*(31+28):(numPeriods*24*(31+29)-1)) = [];
+end
 
 
 progressbar('Simulating...');
 step = 0;
 
 
-%divide the data if sample selection is selected
 %multiple original year..
 %for hours, not just minutes
 Seasons = cellstr(['Summer     ';'Spring/Fall';'Winter     ']);
 TimeOfDays = cellstr(['Morning  ';'Afternoon';'Evening  ';'Night    ']);
-numPeriods = 0;
-if(strcmp(unit,'minute(s)')==1), numPeriods = 60/intv;
-elseif(strcmp(unit,'hour(s)')==1), numPeriods = 1/intv;
-end
-
-if(isLeap==1)
-     originalData(numPeriods*24*(31+28):(numPeriods*24*(31+29)-1)) = [];
-end
 
 dividedData = cell(1,13);
+simDataArray = cell(1,13);
+
+%divide the data into 12
 numHoursArray = zeros(1,12);
 index = 1;
 for i = 1:3
@@ -39,9 +43,16 @@ for i = 1:3
     end
 end
 dividedData{13} = originalData;
+dataForCapFactors = dividedData;
+
+if(yesSample ~= 1)
+    dividedData = cell(1,1);
+    dividedData{1} = originalData;
+    simDataArray = cell(1,1);
+end
 
 maxState = max(ceil(originalData/stateWidth));
-for k = 1:numel(dividedData)
+for k = 1:numel(dividedData)-1
     if(max(dividedData{k} < stateWidth*(maxState-1)))
          difference = (maxState-1)*stateWidth - max(dividedData{k}) + 1;
          index = find(dividedData{k}==max(dividedData{k}));
@@ -154,19 +165,17 @@ for k = 1:numel(dividedData)
     
 end   
 
-combinedSimData = combineSimData(simDataArray, simulationLength, numPeriods);
-simDataArray{end} = combinedSimData;
-
-
-
-
-
-
-
-
-
-
-
+%Combine data if sample selection is selected
+if(yesSample==1)
+    combinedSimData = combineSimData(simDataArray, simulationLength, numPeriods);
+    simDataArray{end} = combinedSimData;
+else
+    dividedData = cell(1,13);
+    dividedData{13} = originalData;
+    simulatedData = simDataArray{1};
+    simDataArray = cell(1,13);
+    simDataArray{13} = simulatedData;
+end
 
 
 
@@ -197,14 +206,28 @@ BIC = -2.*LL + phi.*log(numel(originalData));
 
 %% Calculate average annual capacity factor
 cap_factors = zeros(6,12);
+
+if(yesSample ~= 1)
+    numHoursArray = zeros(1,12);
+    index = 1;
+    for i = 1:3
+        for j = 1:4
+            [simDataArray{index}, numHours]  = divideData(Seasons(i),TimeOfDays(j),...
+                numPeriods,simulatedData,simulationLength);
+            numHoursArray(index) = numHours;
+            index = index + 1;
+        end
+    end
+    simDataArray{13} = simulatedData;
+end
 index = 1;
 for i = 1:2:5
     for j = 1:3:10
-        orig_max = max(dividedData{index}/maxData);
+        orig_max = max(dataForCapFactors{index}/maxData);
         sim_max  = max(simDataArray{index}/maxData);
-        orig_min = min(dividedData{index}/maxData);
+        orig_min = min(dataForCapFactors{index}/maxData);
         sim_min  = min(simDataArray{index}/maxData);
-        orig_sum = sum(dividedData{index});
+        orig_sum = sum(dataForCapFactors{index});
         sim_sum  = sum(simDataArray{index});
         orig_capfactor = orig_sum/(maxData*numHoursArray(index)*numPeriods*originalLength);
         sim_capfactor  = sim_sum/(maxData*numHoursArray(index)*numPeriods*simulationLength);
