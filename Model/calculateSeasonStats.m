@@ -1,8 +1,6 @@
-function [numHours,numDays,begin]  = calculateSeasonStats(timeOfDay, isLeap, ...
+function [numHours,numDays,begin]  = calculateSeasonStats(timeOfDay, ...
     startDate, numberOfDays, morningHours, afternoonHours, eveningHours, nightHours)
-    if(isLeap == 0), begin = startDate;
-    elseif(isLeap == 1), begin = startDate + 1;
-    end
+    begin = startDate;
     numDays = numberOfDays;
     if(strcmp(timeOfDay, 'Morning')), numHours = morningHours;
     elseif(strcmp(timeOfDay, 'Afternoon')), numHours = afternoonHours;

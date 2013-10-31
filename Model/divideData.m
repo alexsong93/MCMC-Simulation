@@ -1,4 +1,5 @@
-function [dividedData, numHours] = divideData(season,timeOfDay,isLeap,numPeriods,origData)
+function [dividedData, numHours] = divideData(season,timeOfDay,numPeriods,...
+    origData,originalLength)
 % calculate the annual average capacity factors for different time of the
 % day for different seasons
 
@@ -14,9 +15,6 @@ SPRFALL_EVENING_HOURS = 244; SPRFALL_NIGHT_HOURS = 488;
 WINTER_BEGIN_DAY = 304;      WINTER_DAYS = 151;
 WINTER_MORNING_HOURS = 1057; WINTER_AFTERNOON_HOURS = 755;
 WINTER_EVENING_HOURS = 604;  WINTER_NIGHT_HOURS = 1208;
-if(isLeap)
-    SUMMER_BEGIN_DAY = 121; 
-end
 
 MORNING_START_HOUR = 6;    MORNING_HOURS = 7;
 AFTERNOON_START_HOUR = 13; AFTERNOON_HOURS = 5;
@@ -27,22 +25,19 @@ NIGHT_START_HOUR = 22;     NIGHT_HOURS = 8;
 % check season
 begin = 0; numDays = 0;  numHours = 0;
 if(strcmp(season, 'Summer') == 1)
-    [numHours, numDays, begin] = calculateSeasonStats(timeOfDay, isLeap, ...
+    [numHours, numDays, begin] = calculateSeasonStats(timeOfDay, ...
         SUMMER_BEGIN_DAY, SUMMER_DAYS, SUMMER_MORNING_HOURS,...
         SUMMER_AFTERNOON_HOURS, SUMMER_EVENING_HOURS, SUMMER_NIGHT_HOURS);
     
 elseif(strcmp(season,'Spring/Fall') == 1)
-    [numHours, numDays, begin] = calculateSeasonStats(timeOfDay, isLeap, ...
+    [numHours, numDays, begin] = calculateSeasonStats(timeOfDay, ...
         SPRFALL_BEGIN_DAY, SPRFALL_DAYS, SPRFALL_MORNING_HOURS,...
         SPRFALL_AFTERNOON_HOURS, SPRFALL_EVENING_HOURS, SPRFALL_NIGHT_HOURS);
     
 elseif(strcmp(season,'Winter') == 1)
-    [numHours, numDays, begin] = calculateSeasonStats(timeOfDay, isLeap, ...
+    [numHours, numDays, begin] = calculateSeasonStats(timeOfDay, ...
         WINTER_BEGIN_DAY, WINTER_DAYS, WINTER_MORNING_HOURS,...
         WINTER_AFTERNOON_HOURS, WINTER_EVENING_HOURS, WINTER_NIGHT_HOURS);
-    if(isLeap == 1)
-        numDays = numDays + 1;
-    end
 end
 
 % check time of day
@@ -70,53 +65,51 @@ orig = origData';
 startIndex = (begin*24*numPeriods)+(numPeriods*timeBegin);
 endIndex = startIndex + numPeriods*timeRange - 1;
 numeratorOrig = [];
-if(strcmp(season,'Summer'))
-    for i = 1:numDays
-        numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
-        startIndex = endIndex + timeToNext;      
-        endIndex = startIndex + numPeriods*timeRange - 1;
-    end
-
-elseif(strcmp(season,'Spring/Fall'))
-    for i = 1:30
-        numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
-        startIndex = endIndex + timeToNext;      
-        endIndex = startIndex + numPeriods*timeRange - 1;
-    end
-    startIndex = (212*24*numPeriods) + numPeriods*timeBegin;
-    endIndex = startIndex + numPeriods*timeRange - 1;
-    for i = 1:31
-        numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
-        startIndex = endIndex + timeToNext;      
-        endIndex = startIndex + numPeriods*timeRange - 1;
-    end
-
-elseif(strcmp(season,'Winter'))
-    for i = 1:61
-        try
-            numeratorOrig = [numeratorOrig orig(1, startIndex:endIndex)];
-        catch err %end of file
-            if(strcmp(err.identifier,'MATLAB:badsubscript'))
-                numeratorOrig = [numeratorOrig orig(1,startIndex:end)];
-                numeratorOrig = [numeratorOrig orig(1,(1:endIndex - numel(orig)))];
-            end
+for k = 1:originalLength
+    if(strcmp(season,'Summer'))
+        for i = 1:numDays
+            numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+            startIndex = endIndex + timeToNext;      
+            endIndex = startIndex + numPeriods*timeRange - 1;
         end
-        startIndex = endIndex + timeToNext;      
+
+    elseif(strcmp(season,'Spring/Fall'))
+        for i = 1:30
+            numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+            startIndex = endIndex + timeToNext;      
+            endIndex = startIndex + numPeriods*timeRange - 1;
+        end
+        startIndex = (212*24*numPeriods) + numPeriods*timeBegin;
         endIndex = startIndex + numPeriods*timeRange - 1;
-    end
-    startIndex = numPeriods*timeBegin;
-    endIndex = startIndex + numPeriods*timeRange - 1;
-    lim = 0;
-    if(isLeap == 0), lim = 90;
-    else lim = 91;
-    end
-    for i = 1:lim
-        numeratorOrig = [numeratorOrig orig(1,startIndex:endIndex)];
-        startIndex = endIndex + timeToNext;      
+        for i = 1:31
+            numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+            startIndex = endIndex + timeToNext;      
+            endIndex = startIndex + numPeriods*timeRange - 1;
+        end
+
+    elseif(strcmp(season,'Winter'))
+        for i = 1:61
+            try
+                numeratorOrig = [numeratorOrig orig(1, startIndex:endIndex)];
+            catch err %end of file
+                if(strcmp(err.identifier,'MATLAB:badsubscript'))
+                    numeratorOrig = [numeratorOrig orig(1,startIndex:end)];
+                    numeratorOrig = [numeratorOrig orig(1,(1:endIndex - numel(orig)))];
+                end
+            end
+            startIndex = endIndex + timeToNext;      
+            endIndex = startIndex + numPeriods*timeRange - 1;
+        end
+        startIndex = numPeriods*timeBegin;
         endIndex = startIndex + numPeriods*timeRange - 1;
+        lim = 91;
+        for i = 1:lim
+            numeratorOrig = [numeratorOrig orig(1,startIndex:endIndex)];
+            startIndex = endIndex + timeToNext;      
+            endIndex = startIndex + numPeriods*timeRange - 1;
+        end
     end
 end
-
 dividedData = numeratorOrig;
 
 end

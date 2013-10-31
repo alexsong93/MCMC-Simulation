@@ -1,5 +1,5 @@
-function [BIC,originalData,simulatedData,stateRangeArray,cap_factors] = ...
-    MCMC_Simul(data,order,numStates,intv,unit,simulationLength)
+function [BIC,dividedData,simDataArray,stateRangeArray,cap_factors] = ...
+    MCMC_Simul(data,order,numStates,intv,unit,simulationLength,originalLength,isLeap)
 
 originalData = csvread(data);
 simDataArray = cell(1,13);
@@ -9,16 +9,12 @@ stateWidth = maxData/numStates;
 stateRangeArray = 0:stateWidth:maxData;
 
 
-% steps = 0;
-% for i = 1:numel(originalData)
-%     steps = steps + numel(originalData{i})*len;
-% end
 progressbar('Simulating...');
 step = 0;
 
 
 %divide the data if sample selection is selected
-%ignore/delete leap years!
+%multiple original year..
 %for hours, not just minutes
 Seasons = cellstr(['Summer     ';'Spring/Fall';'Winter     ']);
 TimeOfDays = cellstr(['Morning  ';'Afternoon';'Evening  ';'Night    ']);
@@ -26,17 +22,23 @@ numPeriods = 0;
 if(strcmp(unit,'minute(s)')==1), numPeriods = 60/intv;
 elseif(strcmp(unit,'hour(s)')==1), numPeriods = 1/intv;
 end
-dividedData = cell(1,12);
+
+if(isLeap==1)
+     originalData(numPeriods*24*(31+28):(numPeriods*24*(31+29)-1)) = [];
+end
+
+dividedData = cell(1,13);
 numHoursArray = zeros(1,12);
 index = 1;
 for i = 1:3
     for j = 1:4
         [dividedData{index}, numHours]  = divideData(Seasons(i),TimeOfDays(j),...
-            0,numPeriods,originalData);
+            numPeriods,originalData,originalLength);
         numHoursArray(index) = numHours;
         index = index + 1;
     end
 end
+dividedData{13} = originalData;
 
 maxState = max(ceil(originalData/stateWidth));
 for k = 1:numel(dividedData)
@@ -155,8 +157,7 @@ end
 combinedSimData = combineSimData(simDataArray, simulationLength, numPeriods);
 simDataArray{end} = combinedSimData;
 
-%for testing
-simulatedData = simDataArray{end};
+
 
 
 
@@ -205,7 +206,7 @@ for i = 1:2:5
         sim_min  = min(simDataArray{index}/maxData);
         orig_sum = sum(dividedData{index});
         sim_sum  = sum(simDataArray{index});
-        orig_capfactor = orig_sum/(maxData*numHoursArray(index)*numPeriods);
+        orig_capfactor = orig_sum/(maxData*numHoursArray(index)*numPeriods*originalLength);
         sim_capfactor  = sim_sum/(maxData*numHoursArray(index)*numPeriods*simulationLength);
         
         cap_factors(i,j) = orig_capfactor;

@@ -290,6 +290,10 @@ leap_no = get(hObject,'Value');
 setappdata(hMainGui, 'leap_no', leap_no);
 leap_no = getappdata(hMainGui, 'leap_no'); %#ok<*NASGU>
 
+leap_yes = get(handles.yes_radio,'Value');
+setappdata(hMainGui, 'leap_yes', leap_yes);
+leap_yes = getappdata(hMainGui, 'leap_yes'); %#ok<*NASGU>
+
 
 % --- Executes on button press in yes_radio.
 function yes_radio_Callback(hObject, eventdata, handles)
@@ -308,6 +312,10 @@ hMainGui = getappdata(0, 'hMainGui');
 leap_yes = get(hObject,'Value');
 setappdata(hMainGui, 'leap_yes', leap_yes);
 leap_yes = getappdata(hMainGui, 'leap_yes'); %#ok<*NASGU>
+
+leap_no = get(handles.no_radio,'Value');
+setappdata(hMainGui, 'leap_no', leap_no);
+leap_no = getappdata(hMainGui, 'leap_no'); %#ok<*NASGU>
 
 % --- Executes on selection change in leap_popup.
 function leap_popup_Callback(hObject, eventdata, handles)
