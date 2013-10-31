@@ -2,8 +2,10 @@ function [BIC,dividedData,simDataArray,stateRangeArray,cap_factors] = ...
     MCMC_Simul(data,order,numStates,intv,unit,simulationLength,originalLength,...
     isLeap,yesSample)
 
-originalData = csvread(data);
+progressbar('Simulating...');
+step = 0;
 
+originalData = csvread(data);
 maxData = max(originalData);
 stateWidth = maxData/numStates;
 stateRangeArray = 0:stateWidth:maxData;
@@ -17,11 +19,6 @@ end
 if(isLeap==1)
      originalData(numPeriods*24*(31+28):(numPeriods*24*(31+29)-1)) = [];
 end
-
-
-progressbar('Simulating...');
-step = 0;
-
 
 %multiple original year..
 %for hours, not just minutes
@@ -102,7 +99,7 @@ for k = 1:limit
     s2 = stateArray((order+1):end);          % items following the ngrams
 
     P = full(sparse(s1,s2,1,maxState^order,maxState));    
-    temp = P;                       % trans matrix of frequencies (before dividing)
+    temp = P;  % trans matrix of frequencies (before dividing); used for BIC
 
     dim = size(P);
     columnLength = dim(1);
@@ -156,7 +153,7 @@ for k = 1:limit
         else startRow = nextState;
         end
         
-        %progress bar
+        % update progress bar
         step = step + 1;
         frac2 = step / simulationLength;
         frac1 = ((k-1) + frac2) / numel(originalData);
@@ -181,25 +178,9 @@ else
     simDataArray{13} = simulatedData;
 end
 
+%calculate BIC
+BIC = calculateBIC(P,temp,numStates,order,originalData);
 
-
-
-%% Calculating the Bayesian information criterion (BIC)
-num_row = numel(P(1:end,1));
-num_col = numel(P(1,1:end));
-
-LL = 0;
-for i = 1:num_row
-    for j = 1:num_col
-        if(P(i,j) == 0 || isnan(P(i,j)))
-            continue;
-        else
-            LL = LL + temp(i,j).*log(P(i,j));       % log likelihood
-        end
-    end
-end
-phi = (numStates.^order).*(numStates-1);           % no. of independent parameters 
-BIC = -2.*LL + phi.*log(numel(originalData));
 
 % subtract back for negative numbers
 %if(min_data < 0)
@@ -209,8 +190,7 @@ BIC = -2.*LL + phi.*log(numel(originalData));
 %end
 
 %% Calculate average annual capacity factor
-cap_factors = zeros(6,12);
-
+% divide sim data if sample selection not chosen (for calculating cap factors)
 if(yesSample ~= 1)
     numHoursArray = zeros(1,12);
     index = 1;
@@ -224,28 +204,10 @@ if(yesSample ~= 1)
     end
     simDataArray{13} = simulatedData;
 end
-index = 1;
-for i = 1:2:5
-    for j = 1:3:10
-        orig_max = max(dataForCapFactors{index}/maxData);
-        sim_max  = max(simDataArray{index}/maxData);
-        orig_min = min(dataForCapFactors{index}/maxData);
-        sim_min  = min(simDataArray{index}/maxData);
-        orig_sum = sum(dataForCapFactors{index});
-        sim_sum  = sum(simDataArray{index});
-        orig_capfactor = orig_sum/(maxData*numHoursArray(index)*numPeriods*originalLength);
-        sim_capfactor  = sim_sum/(maxData*numHoursArray(index)*numPeriods*simulationLength);
-        
-        cap_factors(i,j) = orig_capfactor;
-        cap_factors(i,j+1) = orig_min;
-        cap_factors(i,j+2) = orig_max;
-        cap_factors(i+1,j) = sim_capfactor;
-        cap_factors(i+1,j+1) = sim_min;
-        cap_factors(i+1,j+2) = sim_max;
-        
-        index = index + 1;
-    end
-end
 
+cap_factors = calculateCapFactors(dataForCapFactors,simDataArray,maxData,...
+    numHoursArray,numPeriods,originalLength,simulationLength);
+
+% close progressbar
 progressbar(1);
 end
