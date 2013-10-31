@@ -45,14 +45,18 @@ end
 dividedData{13} = originalData;
 dataForCapFactors = dividedData;
 
+limit = 0;
 if(yesSample ~= 1)
     dividedData = cell(1,1);
     dividedData{1} = originalData;
     simDataArray = cell(1,1);
+    limit = 1;
+else
+    limit = numel(dividedData)-1;
 end
 
 maxState = max(ceil(originalData/stateWidth));
-for k = 1:numel(dividedData)-1
+for k = 1:limit
     if(max(dividedData{k} < stateWidth*(maxState-1)))
          difference = (maxState-1)*stateWidth - max(dividedData{k}) + 1;
          index = find(dividedData{k}==max(dividedData{k}));

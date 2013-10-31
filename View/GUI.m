@@ -56,7 +56,7 @@ yes_sample = getappdata(hMainGui, 'yes_sample');
 
 % capacity table
 set(handles.cap_table,'data',cap_factors);
-set(handles.BIC_text,'String',BIC);
+%set(handles.BIC_text,'String',BIC);
 set(handles.data_text,'String',filename);
 
 handles.unit_value = unit_value;
