@@ -42,17 +42,15 @@ interval_value = str2double(interval_value);
 unit_value = getappdata(hMainGui, 'unit_value');
 length_value = getappdata(hMainGui, 'length');
 length_value = str2double(length_value);
-
 orig_length_value = getappdata(hMainGui, 'orig_length');
 orig_length_value = str2double(orig_length_value);
 leap_yes = getappdata(hMainGui, 'leap_yes');
-leap_no = getappdata(hMainGui, 'leap_no');
-leap_popup = getappdata(hMainGui, 'leap_popup');
+leap_value = getappdata(hMainGui, 'leap_value');
 yes_sample = getappdata(hMainGui, 'yes_sample');
 
 [BIC,data_orig,data_simul,states,cap_factors] = MCMC_Simul(filename,order_value,...
     numstates_value,interval_value,unit_value,length_value,orig_length_value,...
-    leap_yes,yes_sample);   
+    leap_yes,leap_value,yes_sample);   
 
 % capacity table
 set(handles.cap_table,'data',cap_factors);

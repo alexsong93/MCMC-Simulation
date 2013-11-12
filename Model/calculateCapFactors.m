@@ -1,5 +1,5 @@
-function cap_factors = calculateCapFactors(dataForCapFactors,simDataArray,maxData,...
-    numHoursArray,numPeriods,originalLength,simulationLength)
+function [cap_factors,simDataArray] = calculateCapFactors(dataForCapFactors,...
+    simDataArray,maxData,numHoursArray,numPeriods,originalLength,simulationLength)
 cap_factors = zeros(6,12);
 
 index = 1;

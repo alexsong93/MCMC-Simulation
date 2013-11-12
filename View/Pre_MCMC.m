@@ -130,9 +130,6 @@ set(handles.yes_radio,'Value',0);
 set(handles.leap_popup,'Enable','off')
 
 hMainGui = getappdata(0, 'hMainGui');
-leap_no = get(hObject,'Value');
-setappdata(hMainGui, 'leap_no', leap_no);
-
 leap_yes = get(handles.yes_radio,'Value');
 setappdata(hMainGui, 'leap_yes', leap_yes);
 
@@ -149,14 +146,12 @@ hMainGui = getappdata(0, 'hMainGui');
 leap_yes = get(hObject,'Value');
 setappdata(hMainGui, 'leap_yes', leap_yes);
 
-leap_no = get(handles.no_radio,'Value');
-setappdata(hMainGui, 'leap_no', leap_no);
-
 
 % --- Executes on selection change in leap_popup.
 function leap_popup_Callback(hObject, eventdata, handles)
 hMainGui = getappdata(0, 'hMainGui');
-leap_value = get(hObject, 'String');
+leap_value = cellstr(get(hObject,'String'));
+leap_value = leap_value{get(hObject,'Value')};
 setappdata(hMainGui, 'leap_value', leap_value);
 
 % --- Executes during object creation, after setting all properties.
@@ -164,7 +159,6 @@ function leap_popup_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 set(hObject,'Enable','off');
 
 
@@ -201,13 +195,6 @@ end
 
 % --- Executes on selection change in unit_popup.
 function unit_popup_Callback(hObject, eventdata, handles)
-% hObject    handle to unit_popup (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns unit_popup contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from unit_popup
-
 hMainGui = getappdata(0, 'hMainGui');
 unit_value = cellstr(get(hObject,'String'));
 unit_value = unit_value{get(hObject,'Value')};
