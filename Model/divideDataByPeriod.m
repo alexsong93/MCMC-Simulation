@@ -1,5 +1,5 @@
-function [dividedData, numHours, onePeriodRange] = divideDataByPeriod(season,timeOfDay,numPeriods,...
-    origData,originalLength)
+function [dividedData, numHours, onePeriodRange] = ...
+    divideDataByPeriod(season,timeOfDay,numPeriods,data,dataLength)
 % calculate the annual average capacity factors for different time of the
 % day for different seasons
 
@@ -61,28 +61,28 @@ elseif(strcmp(timeOfDay,'Night'))
 end
 
 
-orig = origData';
+data = data';
 startIndex = (begin*24*numPeriods)+(numPeriods*timeBegin);
 endIndex = startIndex + numPeriods*timeRange - 1;
 numeratorOrig = [];
-for k = 1:originalLength
+for k = 1:dataLength
     if(strcmp(season,'Summer'))
         for i = 1:numDays
-            numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+            numeratorOrig = [numeratorOrig  data(1,startIndex:endIndex)];
             startIndex = endIndex + timeToNext;    
             endIndex = startIndex + numPeriods*timeRange - 1;
         end
 
     elseif(strcmp(season,'Spring/Fall'))
         for i = 1:30
-            numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+            numeratorOrig = [numeratorOrig  data(1,startIndex:endIndex)];
             startIndex = endIndex + timeToNext;
             endIndex = startIndex + numPeriods*timeRange - 1;
         end
         startIndex = (212*24*numPeriods) + numPeriods*timeBegin;
         endIndex = startIndex + numPeriods*timeRange - 1;
         for i = 1:31
-            numeratorOrig = [numeratorOrig  orig(1,startIndex:endIndex)];
+            numeratorOrig = [numeratorOrig  data(1,startIndex:endIndex)];
             startIndex = endIndex + timeToNext;      
             endIndex = startIndex + numPeriods*timeRange - 1;
         end
@@ -90,11 +90,11 @@ for k = 1:originalLength
     elseif(strcmp(season,'Winter'))
         for i = 1:61
             try
-                numeratorOrig = [numeratorOrig orig(1, startIndex:endIndex)];
+                numeratorOrig = [numeratorOrig data(1, startIndex:endIndex)];
             catch err %end of file
                 if(strcmp(err.identifier,'MATLAB:badsubscript'))
-                    numeratorOrig = [numeratorOrig orig(1,startIndex:end)];
-                    numeratorOrig = [numeratorOrig orig(1,(1:endIndex - numel(orig)))];
+                    numeratorOrig = [numeratorOrig data(1,startIndex:end)];
+                    numeratorOrig = [numeratorOrig data(1,(1:endIndex - numel(data)))];
                 end
             end
             startIndex = endIndex + timeToNext;      
@@ -104,7 +104,7 @@ for k = 1:originalLength
         endIndex = startIndex + numPeriods*timeRange - 1;
         lim = 91;
         for i = 1:lim
-            numeratorOrig = [numeratorOrig orig(1,startIndex:endIndex)];
+            numeratorOrig = [numeratorOrig data(1,startIndex:endIndex)];
             startIndex = endIndex + timeToNext;      
             endIndex = startIndex + numPeriods*timeRange - 1;
         end

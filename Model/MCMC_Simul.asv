@@ -2,63 +2,53 @@ function [BIC,dividedData,simDataArray,stateRangeArray,cap_factors] = ...
     MCMC_Simul(data,order,numStates,intv,unit,simLength,origLength,...
     isLeap,leapValue,sampleSelected)
 
-%initialize variables
-[origData,maxData,stateWidth,stateRangeArray,numPeriods,Seasons,TimeOfDays,dividedData,simDataArray] = ...
-    initialize(data,numStates,intv,unit,sampleSelected,isLeap,leapValue);
+    %initialize variables
+    [origData,maxData,stateWidth,stateRangeArray,numPeriods,...
+     Seasons,TimeOfDays,dividedData,simDataArray] = ...
+        initialize(data,numStates,intv,unit,sampleSelected,isLeap,leapValue);
 
-%divide the data into 12 if sample selection is specified
-[numHoursArray,dividedData,dataForCapFactors,limit] = ...
-    divideData(dividedData,Seasons,TimeOfDays,numPeriods,origData,origLength,sampleSelected);
+    %divide the data into 12 if sample selection is specified (also used later for cap factors)
+    [numHoursArray,dividedData,dataForCapFactors,limit] = ...
+        divideData(dividedData,Seasons,TimeOfDays,numPeriods,...
+                   origData,origLength,sampleSelected);
 
-%perform MCMC simulation
-simDataArray = performMCMCSimulation(origData,stateWidth,limit,dividedData,...
-    order,simLength,stateRangeArray,numStates);
+    %perform MCMC simulation
+    simDataArray = ...
+        performMCMCSimulation(origData,stateWidth,limit,dividedData,...
+                              order,simLength,stateRangeArray,numStates);
+        
+    %combine simulated data if sample selection was called    
+    [simDataArray,dividedData] = ...
+        combineData(simDataArray,simLength,numPeriods,...
+                    origData,dividedData,sampleSelected);
 
-%Combine data    
-[simDataArray,dividedData] = combineData(simDataArray,simLength,numPeriods,origData)
-%Combine data if sample selection is selected
-if(sampleSelected==1)
-    combinedSimData = combineSimData(simDataArray, simLength, numPeriods);
-    simDataArray{end} = combinedSimData;
-else
-    dividedData = cell(1,13);
-    dividedData{13} = origData;
-    simulatedData = simDataArray{1};
-    simDataArray = cell(1,13);
-    simDataArray{13} = simulatedData;
-end
+    %calculate BIC
+    %BIC = calculateBIC(P,temp,numStates,order,origData);
+    BIC = 0;
 
-%calculate BIC
-%BIC = calculateBIC(P,temp,numStates,order,origData);
-BIC = 0;
+    %calculate average annual capacity factors
 
-
-% subtract back for negative numbers
-%if(min_data < 0)
-%    originalData = originalData - -1.*min_data;
-%    simulatedData = simulatedData - -1.*min_data;
-%    states = states - -1.*min_data;
-%end
-
-%% Calculate average annual capacity factor
-% divide sim data if sample selection not chosen (for calculating cap factors)
-if(sampleSelected ~= 1)
-    numHoursArray = zeros(1,12);
-    index = 1;
-    for i = 1:3
-        for j = 1:4
-            [simDataArray{index}, numHours]  = divideDataByPeriod(Seasons(i),TimeOfDays(j),...
-                numPeriods,simulatedData,simLength);
-            numHoursArray(index) = numHours;
-            index = index + 1;
+    % divide sim data if sample selection not chosen (for calculating cap factors)
+    % (put this in capFactors function)
+    if(sampleSelected ~= 1)
+        simulatedData = simDataArray{13};
+        numHoursArray = zeros(1,12);
+        index = 1;
+        for i = 1:3
+            for j = 1:4
+                [simDataArray{index}, numHours]  = divideDataByPeriod(Seasons(i),TimeOfDays(j),...
+                    numPeriods,simulatedData,simLength);
+                numHoursArray(index) = numHours;
+                index = index + 1;
+            end
         end
+        simDataArray{13} = simulatedData;
     end
-    simDataArray{13} = simulatedData;
-end
+    
+    divideData(dividedData,Seasons,TimeOfDays,numPeriods,...
+                   origData,origLength,sampleSelected)
 
-cap_factors = calculateCapFactors(dataForCapFactors,simDataArray,maxData,...
-    numHoursArray,numPeriods,origLength,simLength);
+    [cap_factors, simDataArray] = calculateCapFactors(dataForCapFactors,simDataArray,maxData,...
+        numHoursArray,numPeriods,origLength,simLength);
 
-% close progressbar
-progressbar(1);
 end

@@ -3,44 +3,28 @@ function [BIC,dividedData,simDataArray,stateRangeArray,cap_factors] = ...
     isLeap,leapValue,sampleSelected)
 
     %initialize variables
-    [origData,maxData,stateWidth,stateRangeArray,numPeriods,Seasons,TimeOfDays,dividedData,simDataArray] = ...
+    [origData,maxData,stateWidth,stateRangeArray,numPeriods,Seasons,TimeOfDays] = ...
         initialize(data,numStates,intv,unit,sampleSelected,isLeap,leapValue);
 
-    %divide the data into 12 if sample selection is specified
+    %divide the data into 12 if sample selection is specified (also used later for cap factors)
     [numHoursArray,dividedData,dataForCapFactors,limit] = ...
-        divideData(dividedData,Seasons,TimeOfDays,numPeriods,origData,origLength,sampleSelected);
+        divideData(Seasons,TimeOfDays,numPeriods,origData,origLength,sampleSelected);
 
     %perform MCMC simulation
-    simDataArray = performMCMCSimulation(origData,stateWidth,limit,dividedData,...
-        order,simLength,stateRangeArray,numStates);
-
+    [simDataArray,P,temp] = ...
+        performMCMCSimulation(origData,stateWidth,limit,dividedData,...
+                              order,simLength,stateRangeArray,numStates,sampleSelected);
+        
     %combine simulated data if sample selection was called    
-    [simDataArray,dividedData] = combineData(simDataArray,simLength,numPeriods,...
-        origData,dividedData,sampleSelected);
+    [simDataArray,dividedData] = ...
+        combineData(simDataArray,simLength,numPeriods,...
+                    origData,dividedData,sampleSelected);
 
-    %calculate BIC
-    %BIC = calculateBIC(P,temp,numStates,order,origData);
-    BIC = 0;
+    %calculate BIC (not fully implemented yet)
+    BIC = calculateBIC(P,temp,numStates,order,origData);
 
     %calculate average annual capacity factors
-
-    % divide sim data if sample selection not chosen (for calculating cap factors)
-    % (put this in capFactors function)
-    if(sampleSelected ~= 1)
-        numHoursArray = zeros(1,12);
-        index = 1;
-        for i = 1:3
-            for j = 1:4
-                [simDataArray{index}, numHours]  = divideDataByPeriod(Seasons(i),TimeOfDays(j),...
-                    numPeriods,simulatedData,simLength);
-                numHoursArray(index) = numHours;
-                index = index + 1;
-            end
-        end
-        simDataArray{13} = simulatedData;
-    end
-
-    [cap_factors simDataArray] = calculateCapFactors(dataForCapFactors,simDataArray,maxData,...
-        numHoursArray,numPeriods,origLength,simLength);
+    [cap_factors, simDataArray] = calculateCapFactors(dataForCapFactors,simDataArray,maxData,...
+        numHoursArray,numPeriods,origLength,simLength,Seasons,TimeOfDays,sampleSelected);
 
 end

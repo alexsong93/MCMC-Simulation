@@ -1,6 +1,11 @@
-function simDataArray = performMCMCSimulation(origData,stateWidth,limit,dividedData,...
-    order,simLength,stateRangeArray,numStates)
+function [simDataArray,P,temp] = performMCMCSimulation(origData,stateWidth,limit,dividedData,...
+    order,simLength,stateRangeArray,numStates,sampleSelected)
     
+    simDataArray = cell(1,13);
+    if(sampleSelected ~= 1)
+        simDataArray = cell(1,1);
+    end
+
     %create progress bar
     progressbar('Simulating...');
     step = 0;
@@ -8,10 +13,10 @@ function simDataArray = performMCMCSimulation(origData,stateWidth,limit,dividedD
     maxState = max(ceil(origData/stateWidth));
     for k = 1:limit
         %create cumulative transition matrix
-        [C,temp,mat,columnLength] = createTransitionMatrices(stateWidth,...
+        [P,C,temp,mat,columnLength] = createTransitionMatrices(stateWidth,...
             dividedData,order,maxState,k);
         %simulate the data
-        simulatedData = simulateData(simLength,stateRangeArray,numStates,C,mat,...
+        [simulatedData, step] = simulateData(simLength,stateRangeArray,numStates,C,mat,...
             columnLength,dividedData,step,k,order,origData);
         simDataArray{k} = simulatedData; %#ok<AGROW>
         

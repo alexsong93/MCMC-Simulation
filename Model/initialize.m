@@ -1,5 +1,5 @@
 function [originalData,maxData,stateWidth,stateRangeArray,...
-    numPeriods,Seasons,TimeOfDays,dividedData,simDataArray] = ...
+    numPeriods,Seasons,TimeOfDays] = ...
     initialize(data,numStates,intv,unit,sampleSelected,isLeap,leapValue)
 
     originalData = csvread(data);
@@ -14,12 +14,6 @@ function [originalData,maxData,stateWidth,stateRangeArray,...
     
     Seasons = cellstr(['Summer     ';'Spring/Fall';'Winter     ']);
     TimeOfDays = cellstr(['Morning  ';'Afternoon';'Evening  ';'Night    ']);
-    dividedData = cell(1,13);
-    simDataArray = cell(1,13);
-    
-    if(sampleSelected ~= 1)
-        simDataArray = cell(1,1);
-    end
     
     %convert leap years if a leap year exists
     originalData = convertLeapYear(isLeap,leapValue,originalData,numPeriods);
