@@ -1,5 +1,5 @@
-function [dividedData, numHours, onePeriodRange] = ...
-    divideDataByPeriod(season,timeOfDay,numPeriods,data,dataLength)
+function [dividedData, numHours, onePeriodRange, oneYearRange] = ...
+    divideDataByPeriod(season,timeOfDay,numPeriods,data,dataLength,order)
 % calculate the annual average capacity factors for different time of the
 % day for different seasons
 
@@ -62,29 +62,32 @@ end
 
 
 data = data';
+offset = order - 1;
+%offset = 0;
+
 startIndex = (begin*24*numPeriods)+(numPeriods*timeBegin);
-endIndex = startIndex + numPeriods*timeRange - 1;
+endIndex = startIndex + offset + numPeriods*timeRange - 1;
 numeratorOrig = [];
 for k = 1:dataLength
     if(strcmp(season,'Summer'))
         for i = 1:numDays
             numeratorOrig = [numeratorOrig  data(1,startIndex:endIndex)];
-            startIndex = endIndex + timeToNext;    
-            endIndex = startIndex + numPeriods*timeRange - 1;
+            startIndex = endIndex + timeToNext - offset;    
+            endIndex = startIndex + offset + numPeriods*timeRange - 1;
         end
 
     elseif(strcmp(season,'Spring/Fall'))
         for i = 1:30
             numeratorOrig = [numeratorOrig  data(1,startIndex:endIndex)];
-            startIndex = endIndex + timeToNext;
-            endIndex = startIndex + numPeriods*timeRange - 1;
+            startIndex = endIndex + timeToNext - offset;
+            endIndex = startIndex + offset + numPeriods*timeRange - 1;
         end
         startIndex = (212*24*numPeriods) + numPeriods*timeBegin;
-        endIndex = startIndex + numPeriods*timeRange - 1;
+        endIndex = startIndex + offset + numPeriods*timeRange - 1;
         for i = 1:31
             numeratorOrig = [numeratorOrig  data(1,startIndex:endIndex)];
-            startIndex = endIndex + timeToNext;      
-            endIndex = startIndex + numPeriods*timeRange - 1;
+            startIndex = endIndex + timeToNext - offset;      
+            endIndex = startIndex + offset + numPeriods*timeRange - 1;
         end
 
     elseif(strcmp(season,'Winter'))
@@ -97,20 +100,21 @@ for k = 1:dataLength
                     numeratorOrig = [numeratorOrig data(1,(1:endIndex - numel(data)))];
                 end
             end
-            startIndex = endIndex + timeToNext;      
-            endIndex = startIndex + numPeriods*timeRange - 1;
+            startIndex = endIndex + timeToNext - offset;      
+            endIndex = startIndex + offset + numPeriods*timeRange - 1;
         end
         startIndex = numPeriods*timeBegin;
-        endIndex = startIndex + numPeriods*timeRange - 1;
+        endIndex = startIndex + offset + numPeriods*timeRange - 1;
         lim = 91;
         for i = 1:lim
             numeratorOrig = [numeratorOrig data(1,startIndex:endIndex)];
-            startIndex = endIndex + timeToNext;      
-            endIndex = startIndex + numPeriods*timeRange - 1;
+            startIndex = endIndex + timeToNext - offset;      
+            endIndex = startIndex + offset + numPeriods*timeRange - 1;
         end
     end
 end
 dividedData = numeratorOrig;
 onePeriodRange = numPeriods*timeRange;
+oneYearRange = numPeriods*numHours;
 
 end

@@ -1,11 +1,11 @@
-function varargout = GUI(varargin)
+function varargout = main_GUI(varargin)
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @GUI_OpeningFcn, ...
-                   'gui_OutputFcn',  @GUI_OutputFcn, ...
+                   'gui_OpeningFcn', @main_GUI_OpeningFcn, ...
+                   'gui_OutputFcn',  @main_GUI_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -20,15 +20,15 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before GUI is made visible.
-function GUI_OpeningFcn(hObject, eventdata, handles, varargin) %#ok<*INUSL>
-% Choose default command line output for GUI
+% --- Executes just before main_GUI is made visible.
+function main_GUI_OpeningFcn(hObject, eventdata, handles, varargin) %#ok<*INUSL>
+% Choose default command line output for main_GUI
 handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes GUI wait for user response (see UIRESUME)
-% uiwait(handles.GUI);
+% UIWAIT makes main_GUI wait for user response (see UIRESUME)
+% uiwait(handles.main_GUI);
 
 hMainGui = getappdata(0, 'hMainGui');
 filename = getappdata(hMainGui, 'filename');
@@ -65,6 +65,9 @@ handles.states = states;
 handles.yes_sample = yes_sample;
 
 data = guidata(hObject);
+global sim;
+sim = data_simul;
+
 
 set(handles.time_buttongroup,'SelectionChangeFcn',...
     {@time_buttongroup_SelectionChangeFcn,handles,data});
@@ -136,7 +139,7 @@ function plotData(handles,data_orig,data_simul,index)
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = GUI_OutputFcn(hObject, eventdata, handles) 
+function varargout = main_GUI_OutputFcn(hObject, eventdata, handles) 
 varargout{1} = handles.output;
 
 %set height of each row of table
@@ -235,3 +238,15 @@ function back_push_Callback(hObject, eventdata, handles)
 Pre_MCMC;
 close(handles.GUI);
 
+
+% --- Executes on button press in save_pushbutton.
+function save_pushbutton_Callback(hObject, eventdata, handles, data)
+% hObject    handle to save_pushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global sim;
+simDataToSave = sim{end};
+file = uiputfile('*.csv','Save Simulated Data As');
+if(any(file))
+    csvwrite(file,simDataToSave);
+end

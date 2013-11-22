@@ -1,4 +1,4 @@
-function combinedSimData = combineData(simDataArray, simulationLength, numPeriods)
+function combinedSimData = combineSimData(simDataArray, simulationLength, numPeriods)
    
 MORNING_HOURS = 7;
 AFTERNOON_HOURS = 5;

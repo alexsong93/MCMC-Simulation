@@ -1,19 +1,24 @@
 function [simulatedData,step] = simulateData(simLength,stateRangeArray,numStates,C,...
-    mat,columnLength,dividedData,step,k,order,origData)
+    mat,columnLength,dividedData,step,k,order,origData,oneYearRangeArray)
     
-    simulatedDataLength = simLength*numel(dividedData{k});
+    simulatedDataLength = simLength*oneYearRangeArray(k);
     simulatedData = zeros(simulatedDataLength,1);
     startRow = randi([1,columnLength-1],1);
-    previousStartRow = 0;
+    
     %check if startRow is not all zeros
-    while(isValid(startRow,C) == 0)
-        startRow=randi([1,columnLength-1],1);
-    end
+%     while(isValid(startRow,C) == 0)
+%         startRow=randi([1,columnLength-1],1);
+%     end
+    
+    %startRow = 1;
 
     for i = 1:simulatedDataLength
-        %if(isValid(startRow,C) == 0)
-        %    startRow = previousStartRow;
-        %end
+        if(isValid(startRow,C) == 0)
+%             disp(k + ': all zeros...');
+%             while(isValid(startRow,C) == 0)
+%                 startRow=randi([1,columnLength-1],1);
+%             end
+        end
         nextState = sum(C(startRow,:) < rand(1,1)) + 1;
         simulatedData(i) = stateRangeArray(nextState) + ...
             (stateRangeArray(nextState+1) - stateRangeArray(nextState)).*rand(1,1);
@@ -24,7 +29,6 @@ function [simulatedData,step] = simulateData(simLength,stateRangeArray,numStates
             nextState = mat(startRow,j+1);
         end
 
-        previousStartRow = startRow;
         if(order ~= 1), startRow = toAdd + mat(startRow,2);
         else startRow = nextState;
         end

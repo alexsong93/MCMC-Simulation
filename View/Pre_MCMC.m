@@ -105,7 +105,7 @@ end
 
 % --- Executes on button press in submit_push.
 function submit_push_Callback(hObject, eventdata, handles)
-GUI;
+main_GUI;
 
 % --- Executes on selection change in orig_len_popup.
 function orig_len_popup_Callback(hObject, eventdata, handles)
