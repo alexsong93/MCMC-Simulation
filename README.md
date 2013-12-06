@@ -12,3 +12,7 @@ farms, retrofits, etc. should be implemented.
 Running the application
 -----------------------
 To start the application, run main.m. This will call Pre_MCMC.m, which will display a GUI that takes user inputs to perform the simulation. Sample training data can be found in the data folder.
+
+Editing the GUI
+----------------
+To modify the elements of the 2nd GUI, call tabpanel('main_GUI.fig','tabs'). This will make the tabs and its contents editable.
