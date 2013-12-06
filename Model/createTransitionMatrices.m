@@ -1,5 +1,5 @@
 function [P,C,temp,mat,columnLength] = createTransitionMatrices(stateWidth,...
-            dividedData,order,maxState,k,onePeriodRangeArray)
+            dividedData,order,maxState,k,onePeriodRangeArray, sampleSelected)
     
     if(max(dividedData{k}) < stateWidth*(maxState-1))
          difference = (maxState-1)*stateWidth - max(dividedData{k}) + 1;
@@ -13,28 +13,29 @@ function [P,C,temp,mat,columnLength] = createTransitionMatrices(stateWidth,...
     
     
     % extract contiguous sequences of n items from the above
-%     matrix = zeros(order,numel(stateArray(1:end-order)));
-%     for i=1:order
-%         matrix(i,1:end) = stateArray(i:end-(order-i+1));
-%     end
-%     ngrams = cellstr(num2str(matrix'));
-    
-    index = 0;
-    matrixToAdd = zeros(order,onePeriodRangeArray(k));
-    matrix = [];
-    while index + 1 < numel(stateArray)
+    if(sampleSelected ~= 1)
+        matrix = zeros(order,numel(stateArray(1:end-order)));
         for i=1:order
-            index = index + 1;
-            matrixToAdd(i,:) = stateArray(index:index + onePeriodRangeArray(k) - 1);
+            matrix(i,1:end) = stateArray(i:end-(order-i+1));
         end
-    
-        matrix = [matrix matrixToAdd];
-        index = index + onePeriodRangeArray(k) - 1;
+        ngrams = cellstr(num2str(matrix'));
+    else
+        index = 0;
         matrixToAdd = zeros(order,onePeriodRangeArray(k));
+        matrix = [];
+        while index + 1 < numel(stateArray)
+            for i=1:order
+                index = index + 1;
+                matrixToAdd(i,:) = stateArray(index:index + onePeriodRangeArray(k) - 1);
+            end
+
+            matrix = [matrix matrixToAdd];
+            index = index + onePeriodRangeArray(k) - 1;
+            matrixToAdd = zeros(order,onePeriodRangeArray(k));
+        end
+        matrix = matrix(:, 1:(end-order));
+        ngrams = cellstr(num2str(matrix'));
     end
-    matrix = matrix(:, 1:(end-order));
-    ngrams = cellstr(num2str(matrix'));
-    
     
     % create all possible combinations of the n items
     str1 = 'ndgrid(1:maxState';
@@ -64,20 +65,23 @@ function [P,C,temp,mat,columnLength] = createTransitionMatrices(stateWidth,...
     
     % items following the ngrams
     s2 = [];
-    startIndex = order + 1;
-    endIndex = onePeriodRangeArray(k) + order - 1;
-    while true
-        if(endIndex > numel(stateArray))
-            break;
+    if(sampleSelected ~= 1)
+        s2 = stateArray((order+1):end);
+    else
+        startIndex = order + 1;
+        endIndex = onePeriodRangeArray(k) + order - 1;
+        while true
+            if(endIndex > numel(stateArray))
+                break;
+            end
+            s2 = [s2 stateArray(startIndex:endIndex)];
+            s2 = [s2 s2(end)];
+            startIndex = endIndex + (order + 1);
+            endIndex = endIndex + onePeriodRangeArray(k) + (order - 1);
         end
-        s2 = [s2 stateArray(startIndex:endIndex)];
-        s2 = [s2 s2(end)];
-        startIndex = endIndex + (order + 1);
-        endIndex = endIndex + onePeriodRangeArray(k) + (order - 1);
+        s2 = s2(1:end-order);
     end
-    s2 = s2(1:end-order);
-    
-%     s2 = stateArray((order+1):end);
+
     
     P = full(sparse(s1,s2,1,maxState^order,maxState));
     temp = P;  % trans matrix of frequencies (before dividing); used for BIC

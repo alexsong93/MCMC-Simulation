@@ -1,10 +1,10 @@
 function [cap_factors,simDataArray] = calculateCapFactors(dataForCapFactors,...
     simDataArray,maxData,numHoursArray,numPeriods,originalLength,simulationLength,...
-    Seasons,TimeOfDays,sampleSelected)
+    Seasons,TimeOfDays,sampleSelected,order)
     
     if(sampleSelected ~= 1)
         [numHoursArray,simDataArray,~,~] = divideData(Seasons,TimeOfDays,numPeriods,...
-                simDataArray{13},simulationLength,1);
+                simDataArray{13},simulationLength,1,order);
     end
 
     cap_factors = zeros(6,12);

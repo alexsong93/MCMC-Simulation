@@ -1,7 +1,11 @@
 function [simulatedData,step] = simulateData(simLength,stateRangeArray,numStates,C,...
-    mat,columnLength,dividedData,step,k,order,origData,oneYearRangeArray)
+    mat,columnLength,dividedData,step,k,order,origData,origLength,oneYearRangeArray,sampleSelected)
     
-    simulatedDataLength = simLength*oneYearRangeArray(k);
+    if(sampleSelected == 1)
+        simulatedDataLength = simLength*oneYearRangeArray(k);
+    else
+        simulatedDataLength = simLength*(numel(origData)/origLength);
+    end
     simulatedData = zeros(simulatedDataLength,1);
     startRow = randi([1,columnLength-1],1);
     
@@ -14,10 +18,9 @@ function [simulatedData,step] = simulateData(simLength,stateRangeArray,numStates
 
     for i = 1:simulatedDataLength
         if(isValid(startRow,C) == 0)
-%             disp(k + ': all zeros...');
-%             while(isValid(startRow,C) == 0)
-%                 startRow=randi([1,columnLength-1],1);
-%             end
+            while(isValid(startRow,C) == 0)
+                startRow=randi([1,columnLength-1],1);
+            end
         end
         nextState = sum(C(startRow,:) < rand(1,1)) + 1;
         simulatedData(i) = stateRangeArray(nextState) + ...

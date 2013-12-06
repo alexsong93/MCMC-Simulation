@@ -95,10 +95,10 @@ function plotACF(handles,unit_value,data_orig,data_simul,interval_value,index)
     
 
 function plotPMF(handles,data_orig,data_simul,states,index)
-    pdf_orig=histc(data_orig{13},states);
-    pdf_orig=pdf_orig(1:end-1)./numel(data_orig{13});
-    pdf_simul=histc(data_simul{13},states);
-    pdf_simul=pdf_simul(1:end-1)./numel(data_simul{13});
+    pdf_orig=histc(data_orig{index},states);
+    pdf_orig=pdf_orig(1:end-1)./numel(data_orig{index});
+    pdf_simul=histc(data_simul{index},states);
+    pdf_simul=pdf_simul(1:end-1)./numel(data_simul{index});
     pdf = bar(handles.orig_pdf,[pdf_orig,pdf_simul],'barwidth',1);
     str = strcat('set(handles.orig_pdf,''XTickLabel'',{''',num2str(floor(states(1))),...
                     '~',num2str(floor(states(2))),'''');
@@ -108,7 +108,7 @@ function plotPMF(handles,data_orig,data_simul,states,index)
     str = strcat(str,'});');
     eval(str);
     axes(handles.orig_pdf);
-    xticklabel_rotate([],45,[],'Fontsize',9);
+    rotateXLabels( gca(), 45 )
 
     colormap(summer);
     l = cell(1,2);

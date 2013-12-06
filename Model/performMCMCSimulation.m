@@ -1,4 +1,4 @@
-function [simDataArray,P,temp] = performMCMCSimulation(origData,limit,dividedData,...
+function [simDataArray,P,temp] = performMCMCSimulation(origData,origLength,limit,dividedData,...
     order,simLength,numStates,sampleSelected,onePeriodRangeArray,stateRangeArray,...
     stateWidth,oneYearRangeArray)
     
@@ -15,18 +15,11 @@ function [simDataArray,P,temp] = performMCMCSimulation(origData,limit,dividedDat
     for k = 1:limit
         %create cumulative transition matrix
         [P,C,temp,mat,columnLength] = createTransitionMatrices(stateWidth,...
-            dividedData,order,maxState,k,onePeriodRangeArray);
+            dividedData,order,maxState,k,onePeriodRangeArray, sampleSelected);
         %simulate the data
         [simulatedData, step] = simulateData(simLength,stateRangeArray,numStates,C,mat,...
-            columnLength,dividedData,step,k,order,origData,oneYearRangeArray);
+            columnLength,dividedData,step,k,order,origData,origLength,oneYearRangeArray,sampleSelected);
         simDataArray{k} = simulatedData; %#ok<AGROW>
-        
-        % subtract back for negative numbers
-        %if(min_data < 0)
-        %    originalData = originalData - -1.*min_data;
-        %    simulatedData = simulatedData - -1.*min_data;
-        %    states = states - -1.*min_data;
-        %end
         
     end
     simDataArray{limit+1} = [];

@@ -5,6 +5,9 @@ function [simDataArray,dividedData] = combineData(simDataArray,simLength,...
     if(sampleSelected==1)
         combinedSimData = combineSimData(simDataArray, simLength, numPeriods);
         simDataArray{end} = combinedSimData;
+        for i=1:12
+            dividedData{i} = dividedData{i}';
+        end
     else
         dividedData = cell(1,13);
         dividedData{13} = origData;
